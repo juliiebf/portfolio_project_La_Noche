@@ -1,68 +1,65 @@
 const express = require('express');
-const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const fs = require('fs');
+const morgan = require('morgan');
 
 const app = express();
 
-app.use(cors());
+// Middleware pour parser le JSON dans le corps des requêtes
 app.use(express.json());
 
-// Création ou ouverture de la base SQLite
-const dbFile = path.resolve(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbFile, (err) => {
+// Middleware de logging simple (affiche méthode et URL)
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
+// Utilisation de morgan pour un logging plus complet en mode 'dev'
+app.use(morgan('dev'));
+
+// Connexion à la base SQLite
+const db = new sqlite3.Database(path.join(__dirname, 'database', 'karaoke.db'), (err) => {
   if (err) {
-    return console.error('Erreur ouverture DB:', err.message);
+    console.error('Erreur connexion à la base SQLite:', err.message);
+  } else {
+    console.log('Connecté à la base SQLite karaoke.db');
   }
-  console.log('Connecté à SQLite');
 });
 
-// Création des tables si non existantes
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL,
-      email TEXT NOT NULL
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS videos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      url TEXT NOT NULL,
-      userId INTEGER NOT NULL,
-      FOREIGN KEY(userId) REFERENCES users(id)
-    )
-  `);
-
-  // Ici, tu peux créer une table likes si besoin
-  // db.run(`CREATE TABLE IF NOT EXISTS likes (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER, videoId INTEGER, FOREIGN KEY(...) ...)`);
-});
-
-// Mise à disposition de la DB dans req via middleware
+// Rendre la DB accessible dans req
 app.use((req, res, next) => {
   req.db = db;
   next();
 });
 
+// Middleware d'authentification basique (à adapter)
+function isAuthenticated(req, res, next) {
+  const userId = req.header('x-user-id');
+  if (userId) {
+    req.user = { id: userId };
+    next();
+  } else {
+    res.status(401).json({ error: 'Utilisateur non authentifié' });
+  }
+}
+
 // Import des routes
-const userRoutes = require('./routes/userRoutes');
-const videoRoutes = require('./routes/videoRoutes');
-const likeRoutes = require('./routes/likeRoutes');
+const videoRoutes = require('./routes/videos');
+const userRoutes = require('./routes/users');
 
+// Utilisation des routes
+app.use('/videos', videoRoutes);
 app.use('/users', userRoutes);
-app.use('/', videoRoutes);
-app.use('/', likeRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Route racine simple
-app.get('/', (req, res) => {
-  res.send('Hello World! Le serveur fonctionne avec SQLite.');
+
+// Gestion des erreurs 404
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route non trouvée' });
 });
 
-const PORT = 3000;
+// Démarrage du serveur
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Serveur lancé sur http://localhost:${PORT}`);
+  console.log(`Serveur Express démarré sur le port ${PORT}`);
 });

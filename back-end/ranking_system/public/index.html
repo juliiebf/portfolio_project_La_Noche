@@ -1,212 +1,99 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Système de Ranking Vidéos</title>
-<style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 1em; }
-  section { margin-bottom: 2em; padding: 1em; border: 1px solid #ccc; border-radius: 8px; }
-  button { cursor: pointer; padding: 0.5em 1em; background-color: #007bff; color: white; border: none; border-radius: 4px; }
-  button:disabled {  background-color: #ccc; cursor: default; }
-  input, select { padding: 0.4em; margin: 0.3em 0; width: 100%; max-width: 300px; }
-  .video-item { border-bottom: 1px solid #ddd; padding: 0.5em 0; display: flex; justify-content: space-between; align-items: center;}
-</style>
+  <meta charset="UTF-8" />
+  <title>Test API Vidéos</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, button { margin: 5px 0; }
+    .section { margin-bottom: 30px; }
+    pre { background: #f4f4f4; padding: 10px; }
+  </style>
 </head>
 <body>
 
-<h1>Système Ranking Vidéos</h1>
+  <h1>Test API Vidéos</h1>
 
-<!-- Section Utilisateur -->
-<section id="user-section">
-  <h2>Utilisateur</h2>
-  <div id="user-info">
-    <div id="not-logged-in">
-      <p>Tu n'es pas connecté.</p>
-      <button id="login-btn">Se connecter</button>
-    </div>
-    <div id="logged-in" style="display:none;">
-      <p>Connecté en tant que <span id="username-display"></span></p>
-      <button id="logout-btn">Se déconnecter</button>
-    </div>
+  <div class="section" id="listVideos">
+    <h2>1. Voir toutes les vidéos</h2>
+    <button onclick="getVideos()">Afficher les vidéos</button>
+    <pre id="videosOutput"></pre>
   </div>
-  <div id="signup-form" style="margin-top:1em;">
-    <h3>Créer un utilisateur</h3>
-    <input type="text" id="new-username" placeholder="Nom d'utilisateur" />
-    <input type="email" id="new-email" placeholder="Email" />
-    <button id="create-user-btn">Créer utilisateur</button>
-    <p id="signup-message" style="color:red;"></p>
+
+  <div class="section" id="addVideo">
+    <h2>2. Ajouter une vidéo (upload fichier)</h2>
+    <label>User ID : <input type="number" id="addVideoUserId" value="1" /></label><br/>
+    <label>Fichier vidéo : <input type="file" id="videoFile" accept="video/*" /></label><br/>
+    <button onclick="uploadVideo()">Ajouter</button>
+    <pre id="addVideoOutput"></pre>
+  </div>  
+
+  <div class="section" id="likeVideo">
+    <h2>3. Liker une vidéo</h2>
+    <label>Vidéo ID : <input type="number" id="likeVideoId" value="1" /></label><br/>
+    <label>User ID : <input type="number" id="likeUserId" value="1" /></label><br/>
+    <button onclick="likeVideo()">Liker la vidéo</button>
+    <pre id="likeVideoOutput"></pre>
   </div>
-</section>
 
-<!-- Section Upload Vidéo -->
-<section id="upload-section" style="display:none;">
-  <h2>Uploader une vidéo</h2>
-  <input type="text" id="video-title" placeholder="Titre de la vidéo" />
-  <input type="file" id="video-file" accept="video/*" /><br/>
-  <button id="upload-btn">Uploader</button>
-  <p id="upload-message" style="color:red;"></p>
-</section>
-
-<!-- Section Liste Vidéos avec like -->
-<section id="videos-section">
-  <h2>Vidéos</h2>
-  <div id="videos-list">
-    <!-- Les vidéos seront listées ici -->
+  <div class="section" id="usersList">
+    <h2>4. Voir la liste des utilisateurs</h2>
+    <button onclick="getUsers()">Afficher les utilisateurs</button>
+    <pre id="usersOutput"></pre>
   </div>
-</section>
 
-<script>
-  let currentUser = null;  // Simule utilisateur connecté
+  <script>
+    const apiBase = 'http://localhost:3000';
 
-  // Affiche/masque sections selon connexion
-  function updateUI() {
-    const loggedInDiv = document.getElementById('logged-in');
-    const notLoggedInDiv = document.getElementById('not-logged-in');
-    const uploadSection = document.getElementById('upload-section');
-
-    if (currentUser) {
-      loggedInDiv.style.display = 'block';
-      notLoggedInDiv.style.display = 'none';
-      uploadSection.style.display = 'block';
-      document.getElementById('username-display').innerText = currentUser.username;
-    } else {
-      loggedInDiv.style.display = 'none';
-      notLoggedInDiv.style.display = 'block';
-      uploadSection.style.display = 'none';
+    async function getVideos() {
+      const res = await fetch(`${apiBase}/videos`);
+      const data = await res.json();
+      document.getElementById('videosOutput').textContent = JSON.stringify(data, null, 2);
     }
+
+    async function uploadVideo() {
+  const userId = document.getElementById('addVideoUserId').value;
+  const fileInput = document.getElementById('videoFile');
+  if (fileInput.files.length === 0) {
+    alert('Choisissez un fichier vidéo');
+    return;
   }
-  
-  updateUI();
+  const file = fileInput.files[0];
 
-  // Simulation Login
-  document.getElementById('login-btn').addEventListener('click', () => {
-    const username = prompt("Nom d'utilisateur pour se connecter:");
-    if (username) {
-      currentUser = { username: username, id: 1 }; // Simulation id fixe
-      updateUI();
-      loadVideos();
-    }
+  const formData = new FormData();
+  formData.append('videoFile', file);
+  formData.append('user_id', userId);
+
+  const res = await fetch(`${apiBase}/videos/add`, {
+    method: 'POST',
+    headers: {
+      'x-user-id': userId
+    },
+    body: formData
   });
+  const data = await res.json();
+  document.getElementById('addVideoOutput').textContent = JSON.stringify(data, null, 2);
+}
 
-  // Logout
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    currentUser = null;
-    updateUI();
-    loadVideos();
-  });
-
-  // Create User
-  document.getElementById('create-user-btn').addEventListener('click', () => {
-    const username = document.getElementById('new-username').value.trim();
-    const email = document.getElementById('new-email').value.trim();
-    const msg = document.getElementById('signup-message');
-    msg.textContent = '';
-    if (!username || !email) {
-      msg.textContent = 'Remplis tous les champs';
-      return;
-    }
-
-    fetch('/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email })
-    }).then(r => r.json())
-      .then(data => {
-        if (data.message && data.id) {
-          msg.style.color = 'green';
-          msg.textContent = 'Utilisateur créé ! Tu peux maintenant te connecter.';
-        } else {
-          msg.style.color = 'red';
-          msg.textContent = data.message || 'Erreur';
+    async function likeVideo() {
+      const videoId = document.getElementById('likeVideoId').value;
+      const userId = document.getElementById('likeUserId').value;
+      const res = await fetch(`${apiBase}/videos/${videoId}/like`, {
+        method: 'POST',
+        headers: {
+          'x-user-id': userId
         }
-      }).catch(() => {
-        msg.style.color = 'red';
-        msg.textContent = 'Erreur lors de la création utilisateur';
       });
-  });
-
-  // Upload vidéo
-  document.getElementById('upload-btn').addEventListener('click', () => {
-    if (!currentUser) {
-      alert('Tu dois être connecté pour uploader.');
-      return;
-    }
-    const title = document.getElementById('video-title').value.trim();
-    const fileInput = document.getElementById('video-file');
-    if (!title || fileInput.files.length === 0) {
-      alert('Merci de mettre un titre et choisir une vidéo');
-      return;
+      const data = await res.json();
+      document.getElementById('likeVideoOutput').textContent = JSON.stringify(data, null, 2);
     }
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('userId', currentUser.id);
-    formData.append('video', fileInput.files[0]);
-
-    fetch('/upload_video', {
-      method: 'POST',
-      body: formData
-    }).then(r => r.json())
-      .then(data => {
-        if (data.message) {
-          alert(data.message);
-          loadVideos();
-        } else {
-          alert('Erreur upload vidéo');
-        }
-      }).catch(() => alert('Erreur upload vidéo'));
-  });
-
-  // Charger et afficher les vidéos
-  function loadVideos() {
-    fetch('/videos')  // Ton endpoint doit retourner un JSON de vidéos {id, title, url, likes}
-      .then(res => res.json())
-      .then(videos => {
-        const container = document.getElementById('videos-list');
-        container.innerHTML = '';
-        if (!videos.length) {
-          container.innerHTML = '<p>Aucune vidéo pour l’instant.</p>';
-          return;
-        }
-        videos.forEach(video => {
-          const div = document.createElement('div');
-          div.className = 'video-item';
-          div.innerHTML = `
-            <span><strong>${video.title}</strong> - Likes: <span id="likes-${video.id}">${video.likes || 0}</span></span>
-            <button ${currentUser ? '' : 'disabled'} data-id="${video.id}">Like</button>
-          `;
-          container.appendChild(div);
-        });
-
-        // Gestion du clic like
-        container.querySelectorAll('button').forEach(btn => {
-          btn.addEventListener('click', () => {
-            if (!currentUser) {
-              alert('Tu dois être connecté pour liker.');
-              return;
-            }
-            const videoId = btn.getAttribute('data-id');
-            fetch('/like_video', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: currentUser.id, videoId: parseInt(videoId) })
-            }).then(r => r.json())
-              .then(data => {
-                if (data.message) {
-                  const likeCountSpan = document.getElementById('likes-' + videoId);
-                  likeCountSpan.textContent++;
-                } else {
-                  alert(data.message || 'Erreur like');
-                }
-              }).catch(() => alert('Erreur like'));
-          });
-        });
-      });
-  }
-
-  loadVideos();
-</script>
+    async function getUsers() {
+      const res = await fetch(`${apiBase}/users`);
+      const data = await res.json();
+      document.getElementById('usersOutput').textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
 
 </body>
 </html>
