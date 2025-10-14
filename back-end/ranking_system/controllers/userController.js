@@ -33,20 +33,26 @@ exports.createUser = (req, res) => {
   const db = req.db;
   const { username, email } = req.body;
 
+  console.log('CreateUser called with:', username, email); // log appel
+
   // Vérifier si username ou email existe déjà
   const checkQuery = `SELECT * FROM users WHERE username = ? OR email = ? LIMIT 1`;
   db.get(checkQuery, [username, email], (err, row) => {
     if (err) {
+      console.error('Erreur vérification utilisateur:', err);
       return res.status(500).json({ message: 'Erreur lors de la vérification des utilisateurs', error: err.message });
     }
     if (row) {
+      console.warn('Username ou email déjà utilisé:', row);
       return res.status(400).json({ message: 'Username ou email déjà utilisé' });
     } else {
       const insertQuery = 'INSERT INTO users(username, email) VALUES (?, ?)';
       db.run(insertQuery, [username, email], function(err) {
         if (err) {
+          console.error('Erreur création utilisateur:', err);
           return res.status(400).json({ message: 'Erreur lors de la création de l\'utilisateur', error: err.message });
         }
+        console.log('Utilisateur créé avec id:', this.lastID);
         res.status(201).json({ message: 'Utilisateur ajouté', id: this.lastID });
       });
     }
