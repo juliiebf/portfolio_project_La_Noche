@@ -1,0 +1,126 @@
+.reservation-section {
+  background: var(--gray-dark);
+}
+
+.reservation-container {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.reservation-info h3 {
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.reservation-info ul {
+  list-style: none;
+}
+
+.reservation-info li {
+  margin-bottom: 0.8rem;
+  padding-left: 1.5rem;
+  position: relative;
+  color: var(--offwhite);
+  line-height: 1.6;
+}
+
+.reservation-form {
+  background: linear-gradient(135deg, var(--brown-dark) 0%, var(--bordeaux) 100%);
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 0 35px rgba(201, 169, 110, 0.4);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--offwhite);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  font-size: 1rem;
+  background: var(--offwhite);
+  color: var(--black);
+  transition: border-color 0.3s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 10px var(--gold-transparent);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.btn-submit {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.btn-submit:disabled {
+  background: #666;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.message {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.message.success {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid #22c55e;
+  color: #22c55e;
+}
+
+.message.error {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+}
+
+@media (max-width: 768px) {
+  .reservation-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .reservation-form {
+    padding: 1.5rem;
+  }
+}
