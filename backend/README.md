@@ -1,318 +1,417 @@
-# 🐘 La Noche - Backend PostgreSQL
+# 💳 La Noche - Backend avec Paiement Stripe
 
-Backend Node.js avec PostgreSQL pour la gestion des réservations du karaoké La Noche.
+Backend Node.js + PostgreSQL avec intégration **Stripe** pour les paiements de privatisation du bar.
 
-## 🚀 Installation
+## 🚀 Fonctionnalités
 
-### Prérequis
-- Node.js 16+ installé
-- PostgreSQL 12+ installé et démarré
-- npm ou yarn
+- ✅ **Réservations standard** (gratuites)
+- ✅ **Privatisations payantes** via Stripe Checkout
+- ✅ **Calcul automatique** des tarifs (base + par personne)
+- ✅ **Webhooks Stripe** pour confirmation automatique
+- ✅ **Remboursements** depuis le panel admin
+- ✅ **Statistiques** avec chiffre d'affaires
+- ✅ **Sécurité** : JWT, rate limiting, validation
 
-### 1. Installation des dépendances
-```bash
-cd la-noche-backend-postgresql
+## 📦 Installation
+
+### 1. Prérequis
+- Node.js 16+
+- PostgreSQL 12+
+- Compte Stripe (gratuit en mode test)
+
+### 2. Installation des dépendances
+\`\`\`bash
+cd la-noche-backend-stripe
 npm install
-```
+\`\`\`
 
-### 2. Configuration PostgreSQL
-
-#### Créer la base de données et l'utilisateur
-```sql
--- Se connecter à PostgreSQL
-psql -U postgres
-
--- Créer la base et l'utilisateur
+### 3. Configuration PostgreSQL
+\`\`\`sql
 CREATE DATABASE lanoche;
-CREATE USER lanocheuser WITH ENCRYPTED PASSWORD 'yourStrongPassword123!';
+CREATE USER lanocheuser WITH ENCRYPTED PASSWORD 'yourPassword';
 GRANT ALL PRIVILEGES ON DATABASE lanoche TO lanocheuser;
-
--- Se connecter à la base
 \c lanoche
-
--- Donner les permissions sur le schéma public
 GRANT ALL ON SCHEMA public TO lanocheuser;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO lanocheuser;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO lanocheuser;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO lanocheuser;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO lanocheuser;
-```
+\`\`\`
 
-### 3. Configuration de l'environnement
-```bash
-# Copier le fichier exemple
+### 4. Configuration Stripe
+
+#### Créer un compte Stripe
+1. Aller sur https://dashboard.stripe.com/register
+2. Créer un compte (gratuit)
+3. Activer le mode test
+
+#### Récupérer les clés API
+1. Aller dans **Developers** > **API keys**
+2. Copier :
+   - **Publishable key** (pk_test_...)
+   - **Secret key** (sk_test_...)
+
+#### Configurer le webhook
+1. Aller dans **Developers** > **Webhooks**
+2. Cliquer **Add endpoint**
+3. URL : \`https://votre-domaine.com/api/webhooks/stripe\`
+4. Événements à écouter :
+   - \`checkout.session.completed\`
+   - \`checkout.session.expired\`
+   - \`payment_intent.payment_failed\`
+   - \`charge.refunded\`
+5. Copier le **Signing secret** (whsec_...)
+
+### 5. Configuration .env
+\`\`\`bash
 cp .env.example .env
-
-# Éditer .env avec vos valeurs
 nano .env
-```
+\`\`\`
 
-Configurer les variables PostgreSQL :
-```env
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DATABASE=lanoche
-POSTGRES_USER=lanocheuser
-POSTGRES_PASSWORD=yourStrongPassword123!
-```
+**Variables Stripe obligatoires :**
+\`\`\`env
+STRIPE_SECRET_KEY=sk_test_votre_cle_secrete
+STRIPE_PUBLISHABLE_KEY=pk_test_votre_cle_publique
+STRIPE_WEBHOOK_SECRET=whsec_votre_webhook_secret
 
-### 4. Initialiser la base de données
-```bash
+STRIPE_SUCCESS_URL=http://localhost:3000/reservation-success
+STRIPE_CANCEL_URL=http://localhost:3000/reservation-cancel
+\`\`\`
+
+### 6. Initialiser la base
+\`\`\`bash
 npm run init-db
-```
+\`\`\`
 
-Ce script va créer :
-- ✅ Table `reservations` avec contraintes
-- ✅ Table `users` pour l'authentification
-- ✅ Table `audit_log` pour l'audit trail
-- ✅ Table `login_attempts` pour la sécurité
-- ✅ Index pour les performances
-- ✅ Triggers pour les mises à jour
-- ✅ Utilisateur admin par défaut
+### 7. Démarrer le serveur
+\`\`\`bash
+npm start  # Production
+npm run dev  # Développement avec nodemon
+\`\`\`
 
-### 5. Démarrer le serveur
-```bash
-# Mode production
-npm start
+Le serveur démarre sur : \`http://localhost:3001\`
 
-# Mode développement (avec nodemon)
-npm run dev
-```
+## 💳 Structure Base de Données
 
-Le serveur démarre sur : `http://localhost:3001`
+### Table \`reservations\`
+\`\`\`sql
+- id SERIAL PRIMARY KEY
+- nom, email, telephone
+- date_reservation, heure_reservation
+- nombre_personnes
+- type_reservation ('standard' | 'privatisation')
+- statut ('en_attente' | 'paiement_en_cours' | 'payee' | 'confirmee' | 'annulee')
+\`\`\`
 
-## 📊 Structure de la Base PostgreSQL
+### Table \`paiements\`
+\`\`\`sql
+- id SERIAL PRIMARY KEY
+- reservation_id (FK)
+- stripe_session_id (unique)
+- stripe_payment_intent_id
+- montant_total DECIMAL
+- statut_paiement ('pending' | 'succeeded' | 'failed' | 'refunded')
+- metadata JSONB
+- date_paiement
+\`\`\`
 
-### Table `reservations`
-```sql
-CREATE TABLE reservations (
-  id SERIAL PRIMARY KEY,
-  nom VARCHAR(100) NOT NULL,
-  email VARCHAR(100) NOT NULL,
-  telephone VARCHAR(20) NOT NULL,
-  date_reservation DATE NOT NULL,
-  heure_reservation TIME NOT NULL,
-  nombre_personnes INTEGER NOT NULL CHECK (nombre_personnes >= 1 AND nombre_personnes <= 20),
-  commentaires TEXT,
-  statut VARCHAR(20) DEFAULT 'en_attente',
-  ip_address VARCHAR(45),
-  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-**Contraintes** :
-- `nom` : 2-100 caractères
-- `email` : format email valide
-- `telephone` : 10+ caractères
-- `date_reservation` : date future obligatoire
-- `nombre_personnes` : entre 1 et 20
-- `statut` : 'en_attente', 'confirmee' ou 'annulee'
-
-### Table `users`
-Pour l'authentification admin avec :
-- Hash bcrypt des mots de passe
-- Système de verrouillage après tentatives échouées
-- Tracking de la dernière connexion
-
-### Table `audit_log`
-Logs de toutes les modifications avec :
-- Table concernée
-- Type d'opération (INSERT/UPDATE/DELETE)
-- Anciennes et nouvelles valeurs (JSONB)
-- Utilisateur et IP
+### Table \`tarifs_privatisation\`
+\`\`\`sql
+- prix_base (ex: 500€)
+- prix_par_personne (ex: 20€)
+- personnes_min (ex: 10)
+- personnes_max (ex: 50)
+- duree_heures (ex: 4h)
+- inclus TEXT[] (liste avantages)
+\`\`\`
 
 ## 🔌 API Endpoints
 
-### Authentification
+### Paiement (Public)
 
-#### `POST /api/auth/login`
-Connexion admin avec JWT
-```json
+#### \`POST /api/payment/calculate\`
+Calculer le montant d'une privatisation
+\`\`\`json
 {
-  "username": "admin",
-  "password": "AdminLaNoche2025!"
+  "nombre_personnes": 25
 }
-```
+\`\`\`
 
-**Réponse** :
-```json
+**Réponse :**
+\`\`\`json
 {
   "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIs...",
-  "user": { "username": "admin", "role": "admin" }
+  "data": {
+    "montantBase": 500,
+    "montantParPersonne": 20,
+    "nombrePersonnes": 25,
+    "montantTotal": 1000,
+    "devise": "eur"
+  }
 }
-```
+\`\`\`
 
-#### `POST /api/auth/logout`
-Déconnexion (détruit la session)
-
-#### `GET /api/auth/status`
-Vérifier si le token est valide (requiert authentification)
-
-### Réservations
-
-#### `GET /api/reservations` 🔐
-Liste toutes les réservations (admin uniquement)
-```bash
-curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:3001/api/reservations
-```
-
-#### `POST /api/reservations` 🌐
-Créer une réservation (public, rate limited)
-```json
+#### \`POST /api/payment/create-reservation\`
+Créer une réservation privatisation avec paiement
+\`\`\`json
 {
   "nom": "Jean Dupont",
   "email": "jean@example.com",
   "telephone": "0612345678",
-  "date_reservation": "2025-10-30",
-  "heure_reservation": "23:00",
-  "nombre_personnes": 4,
-  "commentaires": "Anniversaire"
+  "date_reservation": "2025-11-15",
+  "heure_reservation": "20:00",
+  "nombre_personnes": 25,
+  "commentaires": "Anniversaire 30 ans"
 }
-```
+\`\`\`
 
-#### `GET /api/reservations/:id` 🔐
-Récupérer une réservation par ID (admin)
-
-#### `PUT /api/reservations/:id` 🔐
-Modifier une réservation (admin)
-
-#### `DELETE /api/reservations/:id` 🔐
-Supprimer une réservation (admin)
-
-#### `GET /api/stats` 🔐
-Statistiques des réservations (admin)
-```json
+**Réponse :**
+\`\`\`json
 {
   "success": true,
   "data": {
-    "total": 25,
-    "enAttente": 5,
-    "confirmees": 18,
-    "aujourdhui": 3
+    "reservation_id": 123,
+    "stripe_checkout_url": "https://checkout.stripe.com/c/pay/cs_test_...",
+    "stripe_session_id": "cs_test_...",
+    "montant_total": 1000,
+    "expires_at": "2025-10-28T11:30:00Z"
   }
 }
-```
+\`\`\`
 
-#### `GET /api/test` 🌐
-Test de connexion API (public)
+**Flow :**
+1. Le client remplit le formulaire
+2. L'API crée la réservation (statut: \`paiement_en_cours\`)
+3. L'API génère une session Stripe Checkout
+4. Le client est redirigé vers Stripe pour payer
+5. Après paiement, Stripe envoie un webhook
+6. L'API met à jour le statut en \`payee\`
 
-## 🛡️ Sécurité
+#### \`GET /api/payment/session/:sessionId\`
+Vérifier le statut d'un paiement
+\`\`\`bash
+curl http://localhost:3001/api/payment/session/cs_test_abc123
+\`\`\`
 
-### Protections implémentées
-- **JWT Authentication** - Tokens expiration 24h
-- **Bcrypt Hashing** - 12 rounds pour les mots de passe
-- **Rate Limiting** - 100 req/15min général, 50 req/15min API
-- **Slow Down** - Ralentissement après 10 requêtes
-- **Brute Force Protection** - Verrouillage après 5 tentatives
-- **Input Validation** - Express-validator stricte
-- **SQL Injection Protection** - Requêtes paramétrées
-- **XSS Protection** - Helmet + sanitization
-- **CORS** - Origines restreintes
-- **Sessions sécurisées** - Stockées en PostgreSQL
-- **Audit Trail** - Logs de toutes modifications
+#### \`POST /api/webhooks/stripe\`
+Webhook Stripe (appelé automatiquement par Stripe)
+- ⚠️ **Ne pas appeler manuellement**
+- Vérifie la signature avec \`STRIPE_WEBHOOK_SECRET\`
+- Met à jour automatiquement les statuts
 
-### Anti-spam
-- Maximum 3 réservations par IP par heure
-- Tracking de l'IP dans la base
-- Limite de créneaux par heure (3 max)
+### Admin (JWT requis)
 
-### Logging
-- Toutes les requêtes HTTP loggées
-- Tentatives de login trackées
-- Modifications en base auditées
-- Erreurs détaillées pour débogage
+#### \`GET /api/admin/reservations\`
+Liste toutes les réservations avec paiements
+\`\`\`bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  http://localhost:3001/api/admin/reservations
+\`\`\`
 
-## 🔧 Configuration Avancée
+#### \`GET /api/admin/stats\`
+Statistiques avec chiffre d'affaires
+\`\`\`json
+{
+  "success": true,
+  "data": {
+    "total_reservations": 50,
+    "reservations_payees": 12,
+    "paiements_reussis": 12,
+    "chiffre_affaires": 15000.00,
+    "total_privatisations": 15
+  }
+}
+\`\`\`
 
-### Pool de connexions PostgreSQL
-```env
-POSTGRES_MAX_CONNECTIONS=20
-POSTGRES_IDLE_TIMEOUT_MS=30000
-POSTGRES_CONNECTION_TIMEOUT_MS=2000
-```
+#### \`POST /api/payment/refund/:reservationId\`
+Créer un remboursement
+\`\`\`bash
+curl -X POST \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 1000, "reason": "requested_by_customer"}' \
+  http://localhost:3001/api/payment/refund/123
+\`\`\`
 
-### Sessions
-- Stockées dans PostgreSQL (table `session`)
-- Timeout configurable (défaut 24h)
-- Cookies sécurisés en production
+## 💰 Tarification
 
-### Rate Limiting
-```env
-RATE_LIMIT_WINDOW_MINUTES=15
-RATE_LIMIT_MAX_REQUESTS=100
-MAX_RESERVATIONS_PER_IP_HOUR=3
-```
+### Configuration par défaut
+- **Prix de base** : 500€
+- **Prix par personne** : 20€
+- **Minimum** : 10 personnes
+- **Maximum** : 50 personnes
 
-## 🐛 Résolution de problèmes
+### Exemples de calcul
+- 10 personnes : 500€ + (10 × 20€) = **700€**
+- 25 personnes : 500€ + (25 × 20€) = **1000€**
+- 50 personnes : 500€ + (50 × 20€) = **1500€**
 
-### Erreur de connexion PostgreSQL
-```bash
-# Vérifier que PostgreSQL est démarré
-sudo systemctl status postgresql
+### Modifier les tarifs
+Dans PostgreSQL :
+\`\`\`sql
+UPDATE tarifs_privatisation 
+SET prix_base = 600, prix_par_personne = 25
+WHERE actif = true;
+\`\`\`
 
-# Vérifier les permissions
-psql -U lanocheuser -d lanoche -c "SELECT version();"
-```
+Ou dans le fichier \`.env\` :
+\`\`\`env
+PRIVATISATION_BASE_PRICE=600
+PRIVATISATION_PRICE_PER_PERSON=25
+PRIVATISATION_MIN_PERSONS=10
+PRIVATISATION_MAX_PERSONS=50
+\`\`\`
 
-### Erreur "permission denied for schema public"
-```sql
--- Se connecter en tant que postgres
-psql -U postgres -d lanoche
+## 🔔 Webhooks Stripe
 
--- Donner les permissions
-GRANT ALL ON SCHEMA public TO lanocheuser;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO lanocheuser;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO lanocheuser;
-```
+### Événements gérés
+- **\`checkout.session.completed\`** : Paiement réussi
+- **\`checkout.session.expired\`** : Session expirée (30 min)
+- **\`payment_intent.payment_failed\`** : Paiement échoué
+- **\`charge.refunded\`** : Remboursement effectué
 
-### Réinitialiser la base
-```bash
-# Supprimer la base
-psql -U postgres -c "DROP DATABASE lanoche;"
+### Tester les webhooks en local
 
-# Recréer
-psql -U postgres -c "CREATE DATABASE lanoche;"
-psql -U postgres -d lanoche -c "GRANT ALL ON SCHEMA public TO lanocheuser;"
+#### 1. Installer Stripe CLI
+\`\`\`bash
+# macOS
+brew install stripe/stripe-cli/stripe
 
-# Réinitialiser
-npm run init-db
-```
+# Linux
+wget https://github.com/stripe/stripe-cli/releases/download/v1.17.1/stripe_1.17.1_linux_x86_64.tar.gz
+tar -xvf stripe_1.17.1_linux_x86_64.tar.gz
+sudo mv stripe /usr/local/bin/
+\`\`\`
 
-## 📈 Avantages PostgreSQL vs SQLite
+#### 2. Login Stripe CLI
+\`\`\`bash
+stripe login
+\`\`\`
 
-✅ **Scalabilité** - Supporte des milliers de connexions simultanées  
-✅ **Concurrence** - MVCC pour les accès simultanés  
-✅ **Fonctionnalités avancées** - JSONB, full-text search, triggers  
-✅ **Réplication** - Master-slave pour la haute disponibilité  
-✅ **Performances** - Index avancés, query planner optimisé  
-✅ **Cloud ready** - Compatible AWS RDS, Google Cloud SQL, Azure  
+#### 3. Écouter les webhooks
+\`\`\`bash
+stripe listen --forward-to localhost:3001/api/webhooks/stripe
+\`\`\`
 
-## 🌐 Déploiement
+Cela va générer un \`whsec_...\` à copier dans votre \`.env\`
 
-### Variables d'environnement production
-```env
+#### 4. Tester un événement
+\`\`\`bash
+stripe trigger checkout.session.completed
+\`\`\`
+
+## 🔒 Sécurité
+
+### Vérification webhook
+Chaque webhook Stripe est vérifié avec :
+- Signature HMAC SHA-256
+- Secret webhook unique
+- Protection contre replay attacks
+
+### Autres protections
+- JWT pour l'admin
+- Rate limiting (100 req/15min)
+- Validation stricte des données
+- Transactions PostgreSQL
+- CORS restreint
+- Helmet security headers
+
+## 🌐 Déploiement Production
+
+### Variables d'environnement
+\`\`\`env
 NODE_ENV=production
-POSTGRES_HOST=your-db-host.com
+STRIPE_SECRET_KEY=sk_live_votre_vraie_cle
+STRIPE_WEBHOOK_SECRET=whsec_votre_vrai_secret
+STRIPE_SUCCESS_URL=https://lanoche-paris.fr/success
+STRIPE_CANCEL_URL=https://lanoche-paris.fr/cancel
 POSTGRES_SSL=true
-JWT_SECRET=<générer-clé-256-bits>
-SESSION_SECRET=<générer-clé-256-bits>
-CORS_ORIGINS=https://lanoche-paris.fr
-```
+\`\`\`
 
-### Hébergement recommandé
-- **Heroku** avec addon PostgreSQL
-- **Railway** avec PostgreSQL intégré
-- **AWS** RDS PostgreSQL + EC2
-- **DigitalOcean** Managed PostgreSQL + Droplet
+### Webhook en production
+1. Déployer votre API sur un serveur public (Heroku, Railway, etc.)
+2. Configurer le webhook sur https://votre-domaine.com/api/webhooks/stripe
+3. Utiliser les vraies clés Stripe (sk_live_...)
+
+### Plateformes recommandées
+- **Heroku** : Facile, PostgreSQL inclus
+- **Railway** : Moderne, PostgreSQL + déploiement Git
+- **DigitalOcean** : Contrôle total, App Platform
+- **Render** : Gratuit pour débuter
+
+## 🧪 Tests
+
+### Test mode Stripe
+Par défaut, utilisez les clés **test** (\`sk_test_...\`)
+- Aucun vrai paiement
+- Cartes de test disponibles
+
+### Cartes de test Stripe
+\`\`\`
+4242 4242 4242 4242  → Paiement réussi
+4000 0000 0000 0002  → Paiement refusé
+4000 0000 0000 9995  → Paiement échoué (insufficient funds)
+\`\`\`
+
+Date : N'importe quelle date future  
+CVC : N'importe quel 3 chiffres  
+Code postal : N'importe lequel
+
+## 📊 Monitoring
+
+### Dashboard Stripe
+https://dashboard.stripe.com
+- Paiements en temps réel
+- Remboursements
+- Clients
+- Rapports financiers
+
+### Logs serveur
+\`\`\`bash
+# Voir les logs en temps réel
+npm run dev
+
+# Logs webhook Stripe
+stripe listen --print-json
+\`\`\`
+
+## 💡 Conseils
+
+### Frontend
+Afficher le montant avant le paiement :
+\`\`\`javascript
+// 1. Calculer le montant
+const response = await fetch('/api/payment/calculate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ nombre_personnes: 25 })
+});
+const { data } = await response.json();
+console.log(\`Montant total: \${data.montantTotal}€\`);
+
+// 2. Créer la réservation et rediriger vers Stripe
+const resResponse = await fetch('/api/payment/create-reservation', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(reservationData)
+});
+const { data: resData } = await resResponse.json();
+window.location.href = resData.stripe_checkout_url;
+\`\`\`
+
+### Notifications email
+Stripe envoie automatiquement :
+- Confirmation de paiement
+- Reçu par email
+- Facture PDF
+
+Pour des emails personnalisés, utiliser un service SMTP (configuré dans \`.env\`)
 
 ## 📞 Support
 
-La Noche - 42 Rue des Martyrs, 75009 Paris  
-Email : contact@lanoche-paris.fr  
-Téléphone : 01 42 82 42 82
+La Noche  
+42 Rue des Martyrs, 75009 Paris  
+contact@lanoche-paris.fr  
+01 42 82 42 82
+
+Documentation Stripe : https://stripe.com/docs/api
 
 ---
 
-© 2025 La Noche - Backend PostgreSQL
+© 2025 La Noche - Backend avec Stripe

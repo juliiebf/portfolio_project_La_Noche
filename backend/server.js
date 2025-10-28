@@ -4,7 +4,6 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const slowDown = require('express-slow-down');
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -12,23 +11,22 @@ const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const compression = require('compression');
 const winston = require('winston');
-const expressWinston = require('express-winston');
-const { pool, query, transaction } = require('./db');
+const { Pool } = require('pg');
+const { v4: uuidv4 } = require('uuid');
+const stripeModule = require('./stripe');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'your-super-secret-session-key';
 
-// ============ CONFIGURATION LOGGING ============
+// ============ LOGGING ============
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: 'info',
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
     winston.format.json()
   ),
-  defaultMeta: { service: 'la-noche-api-postgres' },
   transports: [
     new winston.transports.Console({
       format: winston.format.combine(
@@ -39,360 +37,141 @@ const logger = winston.createLogger({
   ]
 });
 
+// ============ DATABASE ============
+const pool = new Pool({
+  host: process.env.POSTGRES_HOST || 'localhost',
+  port: process.env.POSTGRES_PORT || 5432,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  database: process.env.POSTGRES_DATABASE || 'lanoche',
+  ssl: process.env.POSTGRES_SSL === 'true' ? { rejectUnauthorized: false } : false,
+});
+
 // ============ MIDDLEWARE ============
-
-// Compression
 app.use(compression());
+app.use(helmet({ contentSecurityPolicy: false }));
 
-// Sécurité headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-}));
-
-// CORS
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',');
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Accès refusé par CORS'));
-    }
-  },
-  credentials: true,
-  optionsSuccessStatus: 200
+  origin: (process.env.CORS_ORIGINS || 'http://localhost:3000').split(','),
+  credentials: true
 };
 app.use(cors(corsOptions));
 
-// Sessions avec PostgreSQL
 app.use(session({
-  store: new pgSession({
-    pool: pool,
-    tableName: 'session'
-  }),
+  store: new pgSession({ pool }),
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: parseInt(process.env.SESSION_TIMEOUT_HOURS || 24) * 60 * 60 * 1000
-  },
-  name: 'lanoche.sid'
+    maxAge: 24 * 60 * 60 * 1000
+  }
 }));
+
+// IMPORTANT: Pour les webhooks Stripe, on a besoin du raw body
+app.use('/api/webhooks/stripe', bodyParser.raw({ type: 'application/json' }));
+
+// Body parser pour le reste
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Rate limiting
-const generalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES || 15) * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || 100),
-  message: { success: false, error: 'Trop de requêtes. Limite atteinte.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-const apiLimiter = rateLimit({
+const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 50,
-  message: { success: false, error: 'Limite API atteinte.' }
+  max: 100
 });
+app.use(limiter);
 
-const speedLimiter = slowDown({
-  windowMs: 15 * 60 * 1000,
-  delayAfter: 10,
-  delayMs: 500
-});
-
-app.use('/api/', apiLimiter);
-app.use(generalLimiter);
-
-// Body parser
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
-
-// Logging des requêtes
-app.use(expressWinston.logger({
-  winstonInstance: logger,
-  meta: true,
-  msg: "HTTP {{req.method}} {{req.url}}",
-  expressFormat: true,
-  colorize: false,
-}));
-
-// ============ MIDDLEWARE D'AUTHENTIFICATION ============
+// ============ AUTHENTIFICATION ============
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ 
-      success: false, 
-      error: 'Token d\'accès requis' 
-    });
+    return res.status(401).json({ success: false, error: 'Token requis' });
   }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      logger.warn('Token invalide', { ip: req.ip });
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Token invalide' 
-      });
-    }
+    if (err) return res.status(403).json({ success: false, error: 'Token invalide' });
     req.user = user;
     next();
   });
 };
 
-// ============ VALIDATION ============
-const validateReservation = [
-  body('nom')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .matches(/^[a-zA-ZÀ-ÿ\s'-]+$/)
-    .withMessage('Nom invalide')
-    .escape(),
-  body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Email invalide'),
-  body('telephone')
-    .matches(/^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/)
-    .withMessage('Numéro français requis'),
-  body('date_reservation')
-    .isDate()
-    .custom((value) => {
-      const reservationDate = new Date(value);
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      if (reservationDate < now) {
-        throw new Error('Date dans le futur requise');
-      }
-      return true;
-    }),
-  body('heure_reservation')
-    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
-    .withMessage('Heure valide requise'),
-  body('nombre_personnes')
-    .isInt({ min: 1, max: 20 })
-    .withMessage('Entre 1 et 20 personnes'),
-  body('commentaires')
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .escape()
-];
+// ============ ROUTES PAIEMENT STRIPE ============
 
-// ============ ROUTES AUTHENTIFICATION ============
-
-// POST - Login admin
-app.post('/api/auth/login', [
-  body('username').trim().escape(),
-  body('password').isLength({ min: 1 })
+/**
+ * POST /api/payment/calculate
+ * Calculer le montant d'une privatisation
+ */
+app.post('/api/payment/calculate', [
+  body('nombre_personnes').isInt({ min: 1 })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Données invalides'
-      });
+      return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { username, password } = req.body;
+    const { nombre_personnes } = req.body;
 
-    // Vérifier si le compte est verrouillé
-    const userResult = await query(
-      'SELECT * FROM users WHERE username = $1',
-      [username]
+    // Récupérer le tarif depuis la DB
+    const tarifResult = await pool.query(
+      'SELECT * FROM tarifs_privatisation WHERE actif = true ORDER BY id DESC LIMIT 1'
     );
 
-    if (userResult.rows.length === 0) {
-      logger.warn('Tentative connexion username invalide', { ip: req.ip, username });
-
-      // Log de la tentative
-      await query(
-        'INSERT INTO login_attempts (ip_address, username, success) VALUES ($1, $2, $3)',
-        [req.ip, username, false]
-      );
-
-      return res.status(401).json({
+    if (tarifResult.rows.length === 0) {
+      return res.status(404).json({
         success: false,
-        error: 'Identifiants invalides'
+        error: 'Aucun tarif configuré'
       });
     }
 
-    const user = userResult.rows[0];
+    const tarif = tarifResult.rows[0];
+    const calcul = stripeModule.calculatePrivatisationAmount(nombre_personnes, tarif);
 
-    // Vérifier si le compte est verrouillé
-    if (user.locked_until && new Date(user.locked_until) > new Date()) {
-      return res.status(423).json({
-        success: false,
-        error: 'Compte temporairement verrouillé. Réessayez plus tard.'
-      });
-    }
+    logger.info('Calcul tarif privatisation', { nombre_personnes, montant: calcul.montantTotal });
 
-    // Vérifier le mot de passe
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
-
-    if (!isValidPassword) {
-      // Incrémenter les tentatives échouées
-      const newFailedAttempts = user.failed_attempts + 1;
-      const maxAttempts = parseInt(process.env.MAX_LOGIN_ATTEMPTS || 5);
-
-      if (newFailedAttempts >= maxAttempts) {
-        const lockoutMinutes = parseInt(process.env.LOCKOUT_DURATION_MINUTES || 30);
-        const lockoutUntil = new Date(Date.now() + lockoutMinutes * 60 * 1000);
-
-        await query(
-          'UPDATE users SET failed_attempts = $1, locked_until = $2 WHERE id = $3',
-          [newFailedAttempts, lockoutUntil, user.id]
-        );
-
-        logger.warn('Compte verrouillé après tentatives échouées', { 
-          ip: req.ip, 
-          username,
-          lockoutUntil 
-        });
-      } else {
-        await query(
-          'UPDATE users SET failed_attempts = $1 WHERE id = $2',
-          [newFailedAttempts, user.id]
-        );
+    res.json({
+      success: true,
+      data: calcul,
+      tarif: {
+        nom: tarif.nom,
+        description: tarif.description,
+        duree_heures: tarif.duree_heures,
+        inclus: tarif.inclus
       }
-
-      await query(
-        'INSERT INTO login_attempts (ip_address, username, success) VALUES ($1, $2, $3)',
-        [req.ip, username, false]
-      );
-
-      return res.status(401).json({
-        success: false,
-        error: 'Identifiants invalides'
-      });
-    }
-
-    // Connexion réussie - Réinitialiser les tentatives
-    await query(
-      'UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = CURRENT_TIMESTAMP WHERE id = $1',
-      [user.id]
-    );
-
-    await query(
-      'INSERT INTO login_attempts (ip_address, username, success) VALUES ($1, $2, $3)',
-      [req.ip, username, true]
-    );
-
-    // Générer JWT
-    const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role }, 
-      JWT_SECRET, 
-      { expiresIn: '24h' }
-    );
-
-    req.session.user = { id: user.id, username: user.username, role: user.role };
-
-    logger.info('Connexion admin réussie', { ip: req.ip, username });
-
-    res.json({
-      success: true,
-      message: 'Connexion réussie',
-      token,
-      user: { username: user.username, role: user.role }
     });
 
   } catch (error) {
-    logger.error('Erreur login:', error);
-    res.status(500).json({
+    logger.error('Erreur calcul tarif:', error);
+    res.status(400).json({
       success: false,
-      error: 'Erreur serveur'
+      error: error.message
     });
   }
 });
 
-// POST - Logout
-app.post('/api/auth/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      logger.error('Erreur logout:', err);
-      return res.status(500).json({
-        success: false,
-        error: 'Erreur déconnexion'
-      });
-    }
+/**
+ * POST /api/payment/create-reservation
+ * Créer une réservation privatisation avec paiement
+ */
+app.post('/api/payment/create-reservation', [
+  body('nom').trim().isLength({ min: 2 }).escape(),
+  body('email').isEmail().normalizeEmail(),
+  body('telephone').matches(/^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/),
+  body('date_reservation').isDate(),
+  body('heure_reservation').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+  body('nombre_personnes').isInt({ min: 10 }),
+  body('commentaires').optional().trim().isLength({ max: 500 }).escape()
+], async (req, res) => {
+  const client = await pool.connect();
 
-    res.json({
-      success: true,
-      message: 'Déconnexion réussie'
-    });
-  });
-});
-
-// GET - Vérifier statut auth
-app.get('/api/auth/status', authenticateToken, (req, res) => {
-  res.json({
-    success: true,
-    user: req.user
-  });
-});
-
-// ============ ROUTES RÉSERVATIONS ============
-
-// GET - Test
-app.get('/api/test', (req, res) => {
-  logger.info('Test API appelé', { ip: req.ip });
-  res.json({ 
-    message: '🐘 API La Noche PostgreSQL fonctionnelle !',
-    timestamp: new Date().toISOString(),
-    status: 'OK',
-    database: 'PostgreSQL'
-  });
-});
-
-// GET - Toutes les réservations (admin)
-app.get('/api/reservations', authenticateToken, async (req, res) => {
-  try {
-    const result = await query(
-      'SELECT * FROM reservations ORDER BY date_reservation DESC, heure_reservation DESC'
-    );
-
-    logger.info('Réservations récupérées', { 
-      count: result.rows.length, 
-      ip: req.ip,
-      user: req.user.username 
-    });
-
-    res.json({
-      success: true,
-      data: result.rows,
-      count: result.rows.length
-    });
-  } catch (error) {
-    logger.error('Erreur récupération réservations:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Erreur serveur' 
-    });
-  }
-});
-
-// POST - Créer réservation (public)
-app.post('/api/reservations', speedLimiter, validateReservation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      logger.warn('Données réservation invalides', { ip: req.ip, errors: errors.array() });
-      return res.status(400).json({
-        success: false,
-        error: 'Données invalides',
-        details: errors.array()
-      });
+      return res.status(400).json({ success: false, errors: errors.array() });
     }
 
     const {
@@ -400,312 +179,435 @@ app.post('/api/reservations', speedLimiter, validateReservation, async (req, res
       heure_reservation, nombre_personnes, commentaires
     } = req.body;
 
-    // Vérifier date future
-    const reservationDate = new Date(date_reservation + 'T' + heure_reservation);
-    if (reservationDate < new Date()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Date de réservation dans le passé'
-      });
-    }
+    await client.query('BEGIN');
 
-    // Anti-spam: limiter réservations par IP
-    const maxPerHour = parseInt(process.env.MAX_RESERVATIONS_PER_IP_HOUR || 3);
-    const spamCheck = await query(
-      `SELECT COUNT(*) as count 
-       FROM reservations 
-       WHERE ip_address = $1 
-       AND date_creation > NOW() - INTERVAL '1 hour'`,
-      [req.ip]
-    );
-
-    if (spamCheck.rows[0].count >= maxPerHour) {
-      logger.warn('Tentative spam détectée', { ip: req.ip });
-      return res.status(429).json({
-        success: false,
-        error: 'Trop de réservations récentes'
-      });
-    }
-
-    // Vérifier créneaux disponibles
-    const slotCheck = await query(
-      `SELECT COUNT(*) as count 
-       FROM reservations 
+    // Vérifier disponibilité
+    const existingReservation = await client.query(
+      `SELECT id FROM reservations 
        WHERE date_reservation = $1 
-       AND heure_reservation = $2 
-       AND statut != 'annulee'`,
-      [date_reservation, heure_reservation]
+       AND type_reservation = 'privatisation'
+       AND statut NOT IN ('annulee')`,
+      [date_reservation]
     );
 
-    if (slotCheck.rows[0].count >= 3) {
+    if (existingReservation.rows.length > 0) {
+      await client.query('ROLLBACK');
       return res.status(409).json({
         success: false,
-        error: 'Créneau complet'
+        error: 'Cette date est déjà réservée pour une privatisation'
       });
     }
 
-    // Insérer la réservation
-    const result = await query(
+    // Calculer le montant
+    const tarifResult = await client.query(
+      'SELECT * FROM tarifs_privatisation WHERE actif = true LIMIT 1'
+    );
+    const tarif = tarifResult.rows[0];
+    const calcul = stripeModule.calculatePrivatisationAmount(nombre_personnes, tarif);
+
+    // Créer la réservation
+    const reservationResult = await client.query(
       `INSERT INTO reservations 
         (nom, email, telephone, date_reservation, heure_reservation, 
-         nombre_personnes, commentaires, ip_address)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         nombre_personnes, commentaires, type_reservation, statut, ip_address)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'privatisation', 'paiement_en_cours', $8)
        RETURNING *`,
-      [nom, email, telephone, date_reservation, heure_reservation, 
+      [nom, email, telephone, date_reservation, heure_reservation,
        nombre_personnes, commentaires, req.ip]
     );
 
-    const newReservation = result.rows[0];
+    const reservation = reservationResult.rows[0];
 
-    logger.info('Nouvelle réservation créée', {
-      id: newReservation.id,
-      nom, email,
-      date_reservation,
-      heure_reservation,
-      ip: req.ip
+    // Créer la session Stripe
+    const stripeSession = await stripeModule.createCheckoutSession({
+      reservationId: reservation.id,
+      email: email,
+      nom: nom,
+      nombrePersonnes: nombre_personnes,
+      dateReservation: date_reservation,
+      heureReservation: heure_reservation,
+      montantTotal: calcul.montantTotal
+    });
+
+    // Enregistrer le paiement en attente
+    await client.query(
+      `INSERT INTO paiements 
+        (reservation_id, stripe_session_id, montant_total, currency, 
+         statut_paiement, email_client, metadata)
+       VALUES ($1, $2, $3, $4, 'pending', $5, $6)`,
+      [
+        reservation.id,
+        stripeSession.sessionId,
+        calcul.montantTotal,
+        calcul.devise,
+        email,
+        JSON.stringify(calcul)
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    logger.info('Réservation privatisation créée avec paiement', {
+      reservation_id: reservation.id,
+      stripe_session_id: stripeSession.sessionId,
+      montant: calcul.montantTotal
     });
 
     res.status(201).json({
       success: true,
-      message: '🎉 Réservation confirmée !',
+      message: 'Réservation créée. Redirection vers le paiement...',
       data: {
-        id: newReservation.id,
-        nom, email,
-        date_reservation,
-        heure_reservation,
-        nombre_personnes
+        reservation_id: reservation.id,
+        stripe_checkout_url: stripeSession.url,
+        stripe_session_id: stripeSession.sessionId,
+        montant_total: calcul.montantTotal,
+        expires_at: stripeSession.expiresAt
       }
     });
 
   } catch (error) {
-    logger.error('Erreur création réservation:', error);
+    await client.query('ROLLBACK');
+    logger.error('Erreur création réservation paiement:', error);
     res.status(500).json({
       success: false,
-      error: 'Erreur création réservation'
+      error: error.message || 'Erreur création réservation'
     });
+  } finally {
+    client.release();
   }
 });
 
-// GET - Réservation par ID
-app.get('/api/reservations/:id', authenticateToken, async (req, res) => {
+/**
+ * GET /api/payment/session/:sessionId
+ * Récupérer le statut d'une session de paiement
+ */
+app.get('/api/payment/session/:sessionId', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const { sessionId } = req.params;
 
-    if (isNaN(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID invalide'
-      });
-    }
+    // Récupérer depuis Stripe
+    const stripeSession = await stripeModule.getCheckoutSession(sessionId);
 
-    const result = await query(
-      'SELECT * FROM reservations WHERE id = $1',
-      [id]
+    // Récupérer depuis la DB
+    const paiementResult = await pool.query(
+      `SELECT p.*, r.nom, r.email, r.date_reservation, r.heure_reservation
+       FROM paiements p
+       JOIN reservations r ON p.reservation_id = r.id
+       WHERE p.stripe_session_id = $1`,
+      [sessionId]
     );
 
-    if (result.rows.length === 0) {
+    if (paiementResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Réservation non trouvée'
+        error: 'Session non trouvée'
       });
     }
+
+    const paiement = paiementResult.rows[0];
 
     res.json({
       success: true,
-      data: result.rows[0]
+      data: {
+        session_id: sessionId,
+        payment_status: stripeSession.payment_status,
+        reservation_id: paiement.reservation_id,
+        montant_total: parseFloat(paiement.montant_total),
+        email: paiement.email,
+        nom: paiement.nom,
+        date_reservation: paiement.date_reservation
+      }
     });
+
   } catch (error) {
-    logger.error('Erreur récupération réservation:', error);
+    logger.error('Erreur récupération session:', error);
     res.status(500).json({
       success: false,
-      error: 'Erreur serveur'
+      error: 'Erreur récupération session'
     });
   }
 });
 
-// PUT - Modifier réservation (admin)
-app.put('/api/reservations/:id', authenticateToken, validateReservation, async (req, res) => {
+/**
+ * POST /api/webhooks/stripe
+ * Webhook Stripe pour confirmer les paiements
+ */
+app.post('/api/webhooks/stripe', async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const client = await pool.connect();
+
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Données invalides',
-        details: errors.array()
-      });
+    // Vérifier la signature
+    const event = stripeModule.verifyWebhookSignature(req.body, sig);
+
+    logger.info('Webhook Stripe reçu', { type: event.type, id: event.id });
+
+    await client.query('BEGIN');
+
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+
+        // Mettre à jour le paiement
+        await client.query(
+          `UPDATE paiements 
+           SET statut_paiement = 'succeeded',
+               stripe_payment_intent_id = $1,
+               mode_paiement = $2,
+               date_paiement = CURRENT_TIMESTAMP,
+               stripe_webhook_received = true
+           WHERE stripe_session_id = $3`,
+          [session.payment_intent, session.payment_method_types[0], session.id]
+        );
+
+        // Mettre à jour la réservation
+        const reservationId = parseInt(session.metadata.reservation_id);
+        await client.query(
+          `UPDATE reservations 
+           SET statut = 'payee'
+           WHERE id = $1`,
+          [reservationId]
+        );
+
+        logger.info('Paiement confirmé', {
+          session_id: session.id,
+          reservation_id: reservationId
+        });
+
+        break;
+      }
+
+      case 'checkout.session.expired': {
+        const session = event.data.object;
+
+        await client.query(
+          `UPDATE paiements 
+           SET statut_paiement = 'canceled'
+           WHERE stripe_session_id = $1`,
+          [session.id]
+        );
+
+        const reservationId = parseInt(session.metadata.reservation_id);
+        await client.query(
+          `UPDATE reservations 
+           SET statut = 'annulee'
+           WHERE id = $1`,
+          [reservationId]
+        );
+
+        logger.info('Session paiement expirée', { session_id: session.id });
+        break;
+      }
+
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object;
+
+        await client.query(
+          `UPDATE paiements 
+           SET statut_paiement = 'failed'
+           WHERE stripe_payment_intent_id = $1`,
+          [paymentIntent.id]
+        );
+
+        logger.warn('Paiement échoué', { payment_intent_id: paymentIntent.id });
+        break;
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object;
+
+        await client.query(
+          `UPDATE paiements 
+           SET statut_paiement = 'refunded'
+           WHERE stripe_payment_intent_id = $1`,
+          [charge.payment_intent]
+        );
+
+        logger.info('Remboursement effectué', { charge_id: charge.id });
+        break;
+      }
     }
 
-    const id = parseInt(req.params.id);
-    const {
-      nom, email, telephone, date_reservation,
-      heure_reservation, nombre_personnes, commentaires, statut
-    } = req.body;
+    await client.query('COMMIT');
+    res.json({ received: true });
 
-    const result = await query(
-      `UPDATE reservations SET 
-        nom = $1, email = $2, telephone = $3, date_reservation = $4,
-        heure_reservation = $5, nombre_personnes = $6, commentaires = $7,
-        statut = $8
-       WHERE id = $9
-       RETURNING *`,
-      [nom, email, telephone, date_reservation, heure_reservation,
-       nombre_personnes, commentaires, statut || 'en_attente', id]
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Erreur webhook Stripe:', error);
+    res.status(400).send(`Webhook Error: ${error.message}`);
+  } finally {
+    client.release();
+  }
+});
+
+/**
+ * POST /api/payment/refund/:reservationId (admin)
+ * Créer un remboursement
+ */
+app.post('/api/payment/refund/:reservationId', authenticateToken, async (req, res) => {
+  try {
+    const { reservationId } = req.params;
+    const { amount, reason } = req.body;
+
+    // Récupérer le paiement
+    const paiementResult = await pool.query(
+      `SELECT * FROM paiements 
+       WHERE reservation_id = $1 
+       AND statut_paiement = 'succeeded'
+       ORDER BY id DESC LIMIT 1`,
+      [reservationId]
     );
 
-    if (result.rows.length === 0) {
+    if (paiementResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Réservation non trouvée'
+        error: 'Paiement non trouvé ou non éligible au remboursement'
       });
     }
 
-    logger.info('Réservation modifiée', { 
-      id, 
-      user: req.user.username 
+    const paiement = paiementResult.rows[0];
+
+    // Créer le remboursement Stripe
+    const refund = await stripeModule.createRefund(
+      paiement.stripe_payment_intent_id,
+      amount,
+      reason
+    );
+
+    // Mettre à jour la DB
+    await pool.query(
+      `UPDATE paiements 
+       SET statut_paiement = 'refunded'
+       WHERE id = $1`,
+      [paiement.id]
+    );
+
+    await pool.query(
+      `UPDATE reservations 
+       SET statut = 'annulee'
+       WHERE id = $1`,
+      [reservationId]
+    );
+
+    logger.info('Remboursement créé', {
+      reservation_id: reservationId,
+      refund_id: refund.refundId,
+      amount: refund.amount
     });
 
     res.json({
       success: true,
-      message: 'Réservation modifiée',
-      data: result.rows[0]
+      message: 'Remboursement effectué',
+      data: refund
     });
+
   } catch (error) {
-    logger.error('Erreur modification réservation:', error);
+    logger.error('Erreur remboursement:', error);
     res.status(500).json({
       success: false,
-      error: 'Erreur modification'
+      error: error.message
     });
   }
 });
 
-// DELETE - Supprimer réservation (admin)
-app.delete('/api/reservations/:id', authenticateToken, async (req, res) => {
+// ============ ROUTES ADMIN ============
+
+/**
+ * GET /api/admin/reservations (admin)
+ * Liste toutes les réservations avec paiements
+ */
+app.get('/api/admin/reservations', authenticateToken, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-
-    if (isNaN(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'ID invalide'
-      });
-    }
-
-    const result = await query(
-      'DELETE FROM reservations WHERE id = $1 RETURNING *',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Réservation non trouvée'
-      });
-    }
-
-    logger.info('Réservation supprimée', { 
-      id, 
-      user: req.user.username,
-      ip: req.ip 
-    });
-
-    res.json({
-      success: true,
-      message: 'Réservation supprimée'
-    });
-  } catch (error) {
-    logger.error('Erreur suppression:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erreur suppression'
-    });
-  }
-});
-
-// GET - Statistiques (admin)
-app.get('/api/stats', authenticateToken, async (req, res) => {
-  try {
-    const result = await query(`
+    const result = await pool.query(`
       SELECT 
-        (SELECT COUNT(*) FROM reservations) as total,
-        (SELECT COUNT(*) FROM reservations WHERE statut = 'en_attente') as en_attente,
-        (SELECT COUNT(*) FROM reservations WHERE statut = 'confirmee') as confirmees,
-        (SELECT COUNT(*) FROM reservations WHERE date_reservation = CURRENT_DATE) as aujourdhui
+        r.*,
+        p.montant_total,
+        p.statut_paiement,
+        p.stripe_session_id,
+        p.date_paiement
+      FROM reservations r
+      LEFT JOIN paiements p ON r.id = p.reservation_id
+      ORDER BY r.date_creation DESC
+    `);
+
+    res.json({
+      success: true,
+      data: result.rows,
+      count: result.rows.length
+    });
+
+  } catch (error) {
+    logger.error('Erreur récupération réservations:', error);
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * GET /api/admin/stats (admin)
+ * Statistiques avec chiffre d'affaires
+ */
+app.get('/api/admin/stats', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM reservations) as total_reservations,
+        (SELECT COUNT(*) FROM reservations WHERE statut = 'payee') as reservations_payees,
+        (SELECT COUNT(*) FROM paiements WHERE statut_paiement = 'succeeded') as paiements_reussis,
+        (SELECT COALESCE(SUM(montant_total), 0) FROM paiements WHERE statut_paiement = 'succeeded') as chiffre_affaires,
+        (SELECT COUNT(*) FROM reservations WHERE type_reservation = 'privatisation') as total_privatisations
     `);
 
     const stats = result.rows[0];
 
-    logger.info('Stats consultées', { 
-      user: req.user.username,
-      ip: req.ip,
-      stats 
-    });
-
     res.json({
       success: true,
       data: {
-        total: parseInt(stats.total),
-        enAttente: parseInt(stats.en_attente),
-        confirmees: parseInt(stats.confirmees),
-        aujourdhui: parseInt(stats.aujourdhui)
+        total_reservations: parseInt(stats.total_reservations),
+        reservations_payees: parseInt(stats.reservations_payees),
+        paiements_reussis: parseInt(stats.paiements_reussis),
+        chiffre_affaires: parseFloat(stats.chiffre_affaires),
+        total_privatisations: parseInt(stats.total_privatisations)
       }
     });
+
   } catch (error) {
     logger.error('Erreur stats:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erreur serveur'
-    });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
-// ============ GESTION D'ERREURS ============
-app.use(expressWinston.errorLogger({
-  winstonInstance: logger
-}));
+// ============ ROUTES DE BASE ============
 
-app.use((err, req, res, next) => {
-  logger.error('Erreur non gérée:', err);
-  res.status(500).json({
-    success: false,
-    error: 'Erreur interne du serveur'
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: '💳 API La Noche avec Stripe fonctionnelle !',
+    timestamp: new Date().toISOString(),
+    stripe_configured: !!process.env.STRIPE_SECRET_KEY
   });
 });
 
-// 404 Handler
+// 404
 app.use((req, res) => {
-  logger.warn('Route non trouvée', { url: req.url, ip: req.ip });
-  res.status(404).json({
-    success: false,
-    error: 'Route non trouvée'
-  });
+  res.status(404).json({ success: false, error: 'Route non trouvée' });
+});
+
+// Erreurs
+app.use((err, req, res, next) => {
+  logger.error('Erreur:', err);
+  res.status(500).json({ success: false, error: 'Erreur serveur' });
 });
 
 // ============ DÉMARRAGE ============
 const server = app.listen(PORT, () => {
-  logger.info(`🐘 Serveur La Noche PostgreSQL démarré !`);
+  logger.info(`💳 Serveur La Noche + Stripe démarré !`);
   logger.info(`📍 URL: http://localhost:${PORT}`);
-  logger.info(`🗄️ Database: PostgreSQL`);
-  logger.info(`🚀 API: http://localhost:${PORT}/api/`);
-  logger.info(`🔐 Login: POST /api/auth/login`);
+  logger.info(`🔐 Stripe configuré: ${!!process.env.STRIPE_SECRET_KEY}`);
 });
 
-// Fermeture propre
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('🛑 Arrêt du serveur...');
   server.close(async () => {
     await pool.end();
-    logger.info('✅ Pool PostgreSQL fermé');
     process.exit(0);
   });
-});
-
-// Gestion des erreurs non capturées
-process.on('uncaughtException', (error) => {
-  logger.error('Exception non capturée:', error);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Promise rejetée:', { reason, promise });
-  process.exit(1);
 });
