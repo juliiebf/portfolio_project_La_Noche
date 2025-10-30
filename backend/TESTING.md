@@ -72,15 +72,17 @@ curl -X POST http://localhost:3001/api/payment/create-reservation \
 4. Valider le paiement
 5. Vous êtes redirigé vers SUCCESS_URL
 
-## ✅ Test 3 : Vérifier la session de paiement
+## Test 3 : Vérifier la session de paiement
 
 ### Requête
-\`\`\`bash
-curl http://localhost:3001/api/payment/session/cs_test_VOTRE_SESSION_ID
-\`\`\`
+```bash
+# Remplacez SESSION_ID par l'ID de session retourné lors du Test 2
+# Exemple: cs_test_a1JNvWzk5hONUO0bVP4DBo8xkx1y6e7J0ri0a4IHPG1pEG9t7cWkGZnQNC
+curl http://localhost:3001/api/payment/session/SESSION_ID
+```
 
 ### Résultat attendu
-\`\`\`json
+```json
 {
   "success": true,
   "data": {
@@ -95,14 +97,30 @@ curl http://localhost:3001/api/payment/session/cs_test_VOTRE_SESSION_ID
 ## ✅ Test 4 : Webhook Stripe (automatique)
 
 ### Configuration Stripe CLI
-\`\`\`bash
-# 1. Installer Stripe CLI
-brew install stripe/stripe-cli/stripe
 
-# 2. Login
+#### Installation Linux
+\`\`\`bash
+# Télécharger et installer Stripe CLI
+wget https://github.com/stripe/stripe-cli/releases/latest/download/stripe_linux_x86_64.tar.gz
+tar -xvf stripe_linux_x86_64.tar.gz
+sudo mv stripe /usr/local/bin/
+rm stripe_linux_x86_64.tar.gz
+
+# Vérifier l'installation
+stripe --version
+\`\`\`
+
+#### Installation macOS
+\`\`\`bash
+brew install stripe/stripe-cli/stripe
+\`\`\`
+
+#### Configuration et utilisation
+\`\`\`bash
+# 1. Login (ouvre un navigateur pour authentification)
 stripe login
 
-# 3. Écouter les webhooks
+# 2. Écouter les webhooks
 stripe listen --forward-to localhost:3001/api/webhooks/stripe
 \`\`\`
 

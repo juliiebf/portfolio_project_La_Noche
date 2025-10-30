@@ -121,32 +121,34 @@ function verifyWebhookSignature(payload, signature) {
  */
 function calculatePrivatisationAmount(nombrePersonnes, tarifConfig = null) {
   const config = tarifConfig || {
-    prix_base: parseFloat(process.env.PRIVATISATION_BASE_PRICE || 500),
-    prix_par_personne: parseFloat(process.env.PRIVATISATION_PRICE_PER_PERSON || 20),
-    personnes_min: parseInt(process.env.PRIVATISATION_MIN_PERSONS || 10),
-    personnes_max: parseInt(process.env.PRIVATISATION_MAX_PERSONS || 50)
+    prix_base: process.env.PRIVATISATION_BASE_PRICE || 500,
+    prix_par_personne: process.env.PRIVATISATION_PRICE_PER_PERSON || 20,
+    personnes_min: process.env.PRIVATISATION_MIN_PERSONS || 10,
+    personnes_max: process.env.PRIVATISATION_MAX_PERSONS || 50
   };
 
-  // Validation
-  if (nombrePersonnes < config.personnes_min) {
+  if (nombrePersonnes < parseInt(config.personnes_min)) {
     throw new Error(`Minimum ${config.personnes_min} personnes requis pour une privatisation`);
   }
-
-  if (nombrePersonnes > config.personnes_max) {
+  if (nombrePersonnes > parseInt(config.personnes_max)) {
     throw new Error(`Maximum ${config.personnes_max} personnes pour une privatisation`);
   }
 
-  // Calcul
-  const montantTotal = config.prix_base + (nombrePersonnes * config.prix_par_personne);
+  // **Important** : conversion en nombre ici
+  const prixBase = parseFloat(config.prix_base);
+  const prixParPersonne = parseFloat(config.prix_par_personne);
+
+  const montantTotal = prixBase + (nombrePersonnes * prixParPersonne);
 
   return {
-    montantBase: config.prix_base,
-    montantParPersonne: config.prix_par_personne,
-    nombrePersonnes: nombrePersonnes,
-    montantTotal: montantTotal,
+    montantBase: prixBase,
+    montantParPersonne: prixParPersonne,
+    nombrePersonnes,
+    montantTotal,
     devise: process.env.STRIPE_CURRENCY || 'eur'
   };
 }
+
 
 module.exports = {
   createCheckoutSession,

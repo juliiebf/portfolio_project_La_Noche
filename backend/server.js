@@ -99,6 +99,78 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+/**
+ * POST /api/auth/login
+ * Authentification admin
+ */
+app.post('/api/auth/login', [
+  body('username').trim().notEmpty(),
+  body('password').notEmpty()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, errors: errors.array() });
+  }
+
+  try {
+    const { username, password } = req.body;
+
+    // Vérifier le nom d'utilisateur
+    if (username !== process.env.ADMIN_USERNAME) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Identifiants incorrects' 
+      });
+    }
+
+    // Vérifier le mot de passe (supporte hash bcrypt ou plain text)
+    const passwordHash = process.env.ADMIN_PASSWORD_HASH;
+    const plainPassword = process.env.ADMIN_PASSWORD;
+    
+    let isPasswordValid = false;
+    
+    if (passwordHash) {
+      // Utiliser bcrypt si un hash est fourni
+      isPasswordValid = await bcrypt.compare(password, passwordHash);
+    } else if (plainPassword) {
+      // Fallback sur comparaison plain text (non recommandé en production)
+      isPasswordValid = password === plainPassword;
+    } else {
+      logger.error('Aucun mot de passe admin configuré');
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Configuration serveur incorrecte' 
+      });
+    }
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Identifiants incorrects' 
+      });
+    }
+
+    // Générer un token JWT
+    const token = jwt.sign(
+      { username, role: 'admin' },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    logger.info('Login admin réussi', { username });
+
+    res.json({
+      success: true,
+      token,
+      expiresIn: '24h'
+    });
+
+  } catch (error) {
+    logger.error('Erreur login:', error);
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
+  }
+});
+
 // ============ ROUTES PAIEMENT STRIPE ============
 
 /**
