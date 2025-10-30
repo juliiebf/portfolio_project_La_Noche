@@ -3,17 +3,16 @@ logs
 *.log
 npm-debug.log*
 
-# Runtime data
+# Runtime
 pids
 *.pid
 
 # node_modules
 node_modules/
 
-# Environment variables
+# Environment
 .env
 .env.local
-.env.*.local
 
 # OS
 .DS_Store
@@ -23,6 +22,3 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
-
-# Stripe CLI
-stripe-cli/

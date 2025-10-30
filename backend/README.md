@@ -1,155 +1,101 @@
-# 💳 La Noche - Backend avec Paiement Stripe
+# 🎤 La Noche - Backend Complet Fusionné
 
-Backend Node.js + PostgreSQL avec intégration **Stripe** pour les paiements de privatisation du bar.
+Backend Node.js + PostgreSQL + Stripe avec **authentification complète** et **système de paiement** pour privatisation du bar karaoké.
 
-## 🚀 Fonctionnalités
+## 🎯 Contenu Fusionné
 
-- ✅ **Réservations standard** (gratuites)
-- ✅ **Privatisations payantes** via Stripe Checkout
-- ✅ **Calcul automatique** des tarifs (base + par personne)
-- ✅ **Webhooks Stripe** pour confirmation automatique
-- ✅ **Remboursements** depuis le panel admin
-- ✅ **Statistiques** avec chiffre d'affaires
-- ✅ **Sécurité** : JWT, rate limiting, validation
+**Partie 1 (Login/Auth)** ✅
+- ✅ Register utilisateur
+- ✅ Login JWT sécurisé
+- ✅ Récupération profil utilisateur
+- ✅ Table users avec rôles (client/admin/staff)
 
-## 📦 Installation
+**Partie 2 (Paiement Stripe)** ✅
+- ✅ Calcul tarif dynamique
+- ✅ Création réservation avec paiement Stripe
+- ✅ Webhooks Stripe sécurisés
+- ✅ Gestion des paiements
+- ✅ Admin dashboard statistiques
 
-### 1. Prérequis
-- Node.js 16+
-- PostgreSQL 12+
-- Compte Stripe (gratuit en mode test)
+## 🚀 Démarrage Rapide
 
-### 2. Installation des dépendances
-\`\`\`bash
-cd la-noche-backend-stripe
+### 1. Installation
+```bash
+cd la-noche-backend-merged
 npm install
-\`\`\`
+```
 
-### 3. Configuration PostgreSQL
-\`\`\`sql
+### 2. Configuration `.env`
+```bash
+cp .env.example .env
+# Éditer .env avec vos valeurs :
+# - PostgreSQL credentials
+# - Stripe keys (sk_test/pk_test)
+# - Port, JWT secret, etc.
+```
+
+### 3. PostgreSQL
+```bash
+sudo -u postgres psql
 CREATE DATABASE lanoche;
-CREATE USER lanocheuser WITH ENCRYPTED PASSWORD 'yourPassword';
+CREATE USER lanocheuser WITH PASSWORD 'yourPassword';
 GRANT ALL PRIVILEGES ON DATABASE lanoche TO lanocheuser;
 \c lanoche
 GRANT ALL ON SCHEMA public TO lanocheuser;
-\`\`\`
+\q
+```
 
-### 4. Configuration Stripe
-
-#### Créer un compte Stripe
-1. Aller sur https://dashboard.stripe.com/register
-2. Créer un compte (gratuit)
-3. Activer le mode test
-
-#### Récupérer les clés API
-1. Aller dans **Developers** > **API keys**
-2. Copier :
-   - **Publishable key** (pk_test_...)
-   - **Secret key** (sk_test_...)
-
-#### Configurer le webhook
-1. Aller dans **Developers** > **Webhooks**
-2. Cliquer **Add endpoint**
-3. URL : \`https://votre-domaine.com/api/webhooks/stripe\`
-4. Événements à écouter :
-   - \`checkout.session.completed\`
-   - \`checkout.session.expired\`
-   - \`payment_intent.payment_failed\`
-   - \`charge.refunded\`
-5. Copier le **Signing secret** (whsec_...)
-
-### 5. Configuration .env
-\`\`\`bash
-cp .env.example .env
-nano .env
-\`\`\`
-
-**Variables Stripe obligatoires :**
-\`\`\`env
-STRIPE_SECRET_KEY=sk_test_votre_cle_secrete
-STRIPE_PUBLISHABLE_KEY=pk_test_votre_cle_publique
-STRIPE_WEBHOOK_SECRET=whsec_votre_webhook_secret
-
-STRIPE_SUCCESS_URL=http://localhost:3000/reservation-success
-STRIPE_CANCEL_URL=http://localhost:3000/reservation-cancel
-\`\`\`
-
-### 6. Initialiser la base
-\`\`\`bash
+### 4. Initialiser DB
+```bash
 npm run init-db
-\`\`\`
+```
 
-### 7. Démarrer le serveur
-\`\`\`bash
-npm start  # Production
-npm run dev  # Développement avec nodemon
-\`\`\`
-
-Le serveur démarre sur : \`http://localhost:3001\`
-
-## 💳 Structure Base de Données
-
-### Table \`reservations\`
-\`\`\`sql
-- id SERIAL PRIMARY KEY
-- nom, email, telephone
-- date_reservation, heure_reservation
-- nombre_personnes
-- type_reservation ('standard' | 'privatisation')
-- statut ('en_attente' | 'paiement_en_cours' | 'payee' | 'confirmee' | 'annulee')
-\`\`\`
-
-### Table \`paiements\`
-\`\`\`sql
-- id SERIAL PRIMARY KEY
-- reservation_id (FK)
-- stripe_session_id (unique)
-- stripe_payment_intent_id
-- montant_total DECIMAL
-- statut_paiement ('pending' | 'succeeded' | 'failed' | 'refunded')
-- metadata JSONB
-- date_paiement
-\`\`\`
-
-### Table \`tarifs_privatisation\`
-\`\`\`sql
-- prix_base (ex: 500€)
-- prix_par_personne (ex: 20€)
-- personnes_min (ex: 10)
-- personnes_max (ex: 50)
-- duree_heures (ex: 4h)
-- inclus TEXT[] (liste avantages)
-\`\`\`
+### 5. Démarrer le serveur
+```bash
+npm start
+# ou en dev avec nodemon :
+npm run dev
+```
 
 ## 🔌 API Endpoints
 
-### Paiement (Public)
+### Authentification
 
-#### \`POST /api/payment/calculate\`
-Calculer le montant d'une privatisation
-\`\`\`json
+**POST /api/auth/register**
+```json
+{
+  "email": "user@example.com",
+  "password": "securePassword123",
+  "nom": "Dupont",
+  "prenom": "Jean"
+}
+```
+
+**POST /api/auth/login**
+```json
+{
+  "email": "user@example.com",
+  "password": "securePassword123"
+}
+```
+
+**GET /api/auth/me** (protégé - Bearer token)
+Récupérer le profil de l'utilisateur connecté
+
+**POST /api/auth/logout** (protégé)
+
+### Paiement
+
+**POST /api/payment/calculate**
+```json
 {
   "nombre_personnes": 25
 }
-\`\`\`
+```
+Retourne : montant base + montant par personne + total
 
-**Réponse :**
-\`\`\`json
-{
-  "success": true,
-  "data": {
-    "montantBase": 500,
-    "montantParPersonne": 20,
-    "nombrePersonnes": 25,
-    "montantTotal": 1000,
-    "devise": "eur"
-  }
-}
-\`\`\`
-
-#### \`POST /api/payment/create-reservation\`
-Créer une réservation privatisation avec paiement
-\`\`\`json
+**POST /api/payment/create-reservation**
+```json
 {
   "nom": "Jean Dupont",
   "email": "jean@example.com",
@@ -157,261 +103,161 @@ Créer une réservation privatisation avec paiement
   "date_reservation": "2025-11-15",
   "heure_reservation": "20:00",
   "nombre_personnes": 25,
-  "commentaires": "Anniversaire 30 ans"
+  "commentaires": "Anniversaire"
 }
-\`\`\`
+```
+Retourne : URL Stripe Checkout
 
-**Réponse :**
-\`\`\`json
-{
-  "success": true,
-  "data": {
-    "reservation_id": 123,
-    "stripe_checkout_url": "https://checkout.stripe.com/c/pay/cs_test_...",
-    "stripe_session_id": "cs_test_...",
-    "montant_total": 1000,
-    "expires_at": "2025-10-28T11:30:00Z"
-  }
-}
-\`\`\`
-
-**Flow :**
-1. Le client remplit le formulaire
-2. L'API crée la réservation (statut: \`paiement_en_cours\`)
-3. L'API génère une session Stripe Checkout
-4. Le client est redirigé vers Stripe pour payer
-5. Après paiement, Stripe envoie un webhook
-6. L'API met à jour le statut en \`payee\`
-
-#### \`GET /api/payment/session/:sessionId\`
+**GET /api/payment/session/:sessionId**
 Vérifier le statut d'un paiement
-\`\`\`bash
-curl http://localhost:3001/api/payment/session/cs_test_abc123
-\`\`\`
 
-#### \`POST /api/webhooks/stripe\`
-Webhook Stripe (appelé automatiquement par Stripe)
-- ⚠️ **Ne pas appeler manuellement**
-- Vérifie la signature avec \`STRIPE_WEBHOOK_SECRET\`
-- Met à jour automatiquement les statuts
+**POST /api/webhooks/stripe**
+Webhook Stripe (automatique)
 
-### Admin (JWT requis)
+### Admin (protégé - rôle admin)
 
-#### \`GET /api/admin/reservations\`
+**GET /api/admin/reservations**
 Liste toutes les réservations avec paiements
-\`\`\`bash
-curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://localhost:3001/api/admin/reservations
-\`\`\`
 
-#### \`GET /api/admin/stats\`
-Statistiques avec chiffre d'affaires
-\`\`\`json
-{
-  "success": true,
-  "data": {
-    "total_reservations": 50,
-    "reservations_payees": 12,
-    "paiements_reussis": 12,
-    "chiffre_affaires": 15000.00,
-    "total_privatisations": 15
-  }
-}
-\`\`\`
+**GET /api/admin/stats**
+Statistiques : total réservations, paiements réussis, chiffre d'affaires
 
-#### \`POST /api/payment/refund/:reservationId\`
-Créer un remboursement
-\`\`\`bash
-curl -X POST \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"amount": 1000, "reason": "requested_by_customer"}' \
-  http://localhost:3001/api/payment/refund/123
-\`\`\`
+## 🗄️ Structure Base Données
 
-## 💰 Tarification
+### Table `users`
+- id, email (UNIQUE), password_hash
+- nom, prenom, telephone
+- role ('client', 'admin', 'staff')
+- is_active, created_at, last_login
 
-### Configuration par défaut
-- **Prix de base** : 500€
-- **Prix par personne** : 20€
-- **Minimum** : 10 personnes
-- **Maximum** : 50 personnes
+### Table `reservations`
+- id, nom, email, telephone
+- date_reservation, heure_reservation
+- nombre_personnes, commentaires
+- type_reservation ('privatisation')
+- statut ('en_attente', 'paiement_en_cours', 'payee', 'confirmee', 'annulee')
 
-### Exemples de calcul
-- 10 personnes : 500€ + (10 × 20€) = **700€**
-- 25 personnes : 500€ + (25 × 20€) = **1000€**
-- 50 personnes : 500€ + (50 × 20€) = **1500€**
+### Table `paiements`
+- id, reservation_id (FK), stripe_session_id
+- montant_total, email_client
+- statut_paiement ('pending', 'succeeded', 'failed')
+- date_paiement
 
-### Modifier les tarifs
-Dans PostgreSQL :
-\`\`\`sql
-UPDATE tarifs_privatisation 
-SET prix_base = 600, prix_par_personne = 25
-WHERE actif = true;
-\`\`\`
+## 💳 Configuration Stripe
 
-Ou dans le fichier \`.env\` :
-\`\`\`env
-PRIVATISATION_BASE_PRICE=600
-PRIVATISATION_PRICE_PER_PERSON=25
-PRIVATISATION_MIN_PERSONS=10
-PRIVATISATION_MAX_PERSONS=50
-\`\`\`
+1. Créer compte : https://dashboard.stripe.com
+2. Récupérer clés API (Dashboard > Developers > API keys)
+3. Copier dans `.env` :
+   ```
+   STRIPE_SECRET_KEY=sk_test_...
+   STRIPE_PUBLISHABLE_KEY=pk_test_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   ```
 
-## 🔔 Webhooks Stripe
+## 🧪 Test Webhook Stripe en Local
 
-### Événements gérés
-- **\`checkout.session.completed\`** : Paiement réussi
-- **\`checkout.session.expired\`** : Session expirée (30 min)
-- **\`payment_intent.payment_failed\`** : Paiement échoué
-- **\`charge.refunded\`** : Remboursement effectué
-
-### Tester les webhooks en local
-
-#### 1. Installer Stripe CLI
-\`\`\`bash
-# macOS
+```bash
+# Installer Stripe CLI
 brew install stripe/stripe-cli/stripe
 
-# Linux
-wget https://github.com/stripe/stripe-cli/releases/download/v1.17.1/stripe_1.17.1_linux_x86_64.tar.gz
-tar -xvf stripe_1.17.1_linux_x86_64.tar.gz
-sudo mv stripe /usr/local/bin/
-\`\`\`
-
-#### 2. Login Stripe CLI
-\`\`\`bash
+# Login
 stripe login
-\`\`\`
 
-#### 3. Écouter les webhooks
-\`\`\`bash
+# Écouter les webhooks
 stripe listen --forward-to localhost:3001/api/webhooks/stripe
-\`\`\`
 
-Cela va générer un \`whsec_...\` à copier dans votre \`.env\`
-
-#### 4. Tester un événement
-\`\`\`bash
+# Dans un autre terminal, déclencher un événement de test
 stripe trigger checkout.session.completed
-\`\`\`
+```
 
-## 🔒 Sécurité
+## 🔐 Sécurité
 
-### Vérification webhook
-Chaque webhook Stripe est vérifié avec :
-- Signature HMAC SHA-256
-- Secret webhook unique
-- Protection contre replay attacks
+- ✅ Authentification JWT
+- ✅ Hachage bcrypt pour mots de passe
+- ✅ Rate limiting sur authentification
+- ✅ Validation stricte des données
+- ✅ CORS configuré
+- ✅ Helmet security headers
+- ✅ Webhooks Stripe vérifiés
+- ✅ Tokens expiration 24h
 
-### Autres protections
-- JWT pour l'admin
-- Rate limiting (100 req/15min)
-- Validation stricte des données
-- Transactions PostgreSQL
-- CORS restreint
-- Helmet security headers
+## 📊 Variables d'Environnement
 
-## 🌐 Déploiement Production
+```env
+# Serveur
+PORT=3001
+NODE_ENV=development
 
-### Variables d'environnement
-\`\`\`env
-NODE_ENV=production
-STRIPE_SECRET_KEY=sk_live_votre_vraie_cle
-STRIPE_WEBHOOK_SECRET=whsec_votre_vrai_secret
-STRIPE_SUCCESS_URL=https://lanoche-paris.fr/success
-STRIPE_CANCEL_URL=https://lanoche-paris.fr/cancel
-POSTGRES_SSL=true
-\`\`\`
+# PostgreSQL
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=lanoche
+POSTGRES_USER=lanocheuser
+POSTGRES_PASSWORD=yourPassword
 
-### Webhook en production
-1. Déployer votre API sur un serveur public (Heroku, Railway, etc.)
-2. Configurer le webhook sur https://votre-domaine.com/api/webhooks/stripe
-3. Utiliser les vraies clés Stripe (sk_live_...)
+# JWT & Security
+JWT_SECRET=your-secret-key-256-bits
+SESSION_SECRET=your-session-key
 
-### Plateformes recommandées
-- **Heroku** : Facile, PostgreSQL inclus
-- **Railway** : Moderne, PostgreSQL + déploiement Git
-- **DigitalOcean** : Contrôle total, App Platform
-- **Render** : Gratuit pour débuter
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
-## 🧪 Tests
+# Tarification
+PRIVATISATION_BASE_PRICE=500
+PRIVATISATION_PRICE_PER_PERSON=20
+```
 
-### Test mode Stripe
-Par défaut, utilisez les clés **test** (\`sk_test_...\`)
-- Aucun vrai paiement
-- Cartes de test disponibles
+## 🛠️ Dépendances Principales
 
-### Cartes de test Stripe
-\`\`\`
-4242 4242 4242 4242  → Paiement réussi
-4000 0000 0000 0002  → Paiement refusé
-4000 0000 0000 9995  → Paiement échoué (insufficient funds)
-\`\`\`
+- **express** : Framework web
+- **pg** : PostgreSQL client
+- **stripe** : API Stripe
+- **bcrypt** : Hachage mots de passe
+- **jsonwebtoken** : JWT authentication
+- **cors** : Cross-origin requests
+- **helmet** : Security headers
+- **express-validator** : Validation
+- **express-rate-limit** : Rate limiting
 
-Date : N'importe quelle date future  
-CVC : N'importe quel 3 chiffres  
-Code postal : N'importe lequel
+## 📝 Scripts
 
-## 📊 Monitoring
+```bash
+npm start        # Démarrer le serveur
+npm run dev      # Démarrer avec nodemon
+npm run init-db  # Initialiser la base de données
+```
 
-### Dashboard Stripe
-https://dashboard.stripe.com
-- Paiements en temps réel
-- Remboursements
-- Clients
-- Rapports financiers
+## 🚀 Déploiement Production
 
-### Logs serveur
-\`\`\`bash
-# Voir les logs en temps réel
-npm run dev
+1. Changer NODE_ENV en 'production'
+2. Générer nouvelles clés secrets (JWT, session)
+3. Configurer HTTPS/SSL
+4. Utiliser clés Stripe LIVE (sk_live_, pk_live_)
+5. Déployer sur cloud (Heroku, Railway, etc.)
 
-# Logs webhook Stripe
-stripe listen --print-json
-\`\`\`
+## 📞 Problèmes Courants
 
-## 💡 Conseils
+### "Route non trouvée"
+- Vérifier que le serveur est bien lancé
+- Vérifier l'URL et la méthode HTTP (GET, POST, etc.)
 
-### Frontend
-Afficher le montant avant le paiement :
-\`\`\`javascript
-// 1. Calculer le montant
-const response = await fetch('/api/payment/calculate', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ nombre_personnes: 25 })
-});
-const { data } = await response.json();
-console.log(\`Montant total: \${data.montantTotal}€\`);
+### "Token invalide"
+- Token expiré (24h) → relancer login
+- Mauvais JWT_SECRET dans .env
 
-// 2. Créer la réservation et rediriger vers Stripe
-const resResponse = await fetch('/api/payment/create-reservation', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(reservationData)
-});
-const { data: resData } = await resResponse.json();
-window.location.href = resData.stripe_checkout_url;
-\`\`\`
+### "Email ou mot de passe incorrect"
+- Vérifier les identifiants
+- Vérifier que l'utilisateur existe en base
 
-### Notifications email
-Stripe envoie automatiquement :
-- Confirmation de paiement
-- Reçu par email
-- Facture PDF
+### "Stripe session not found"
+- Session a expiré (30 minutes)
+- Utiliser le bon session_id retourné par create-reservation
 
-Pour des emails personnalisés, utiliser un service SMTP (configuré dans \`.env\`)
+## 🎉 Vous Êtes Prêt !
 
-## 📞 Support
-
-La Noche  
-42 Rue des Martyrs, 75009 Paris  
-contact@lanoche-paris.fr  
-01 42 82 42 82
-
-Documentation Stripe : https://stripe.com/docs/api
+Votre API La Noche est maintenant **complète**, **sécurisée** et **prête pour le déploiement** ! 🚀
 
 ---
 
-© 2025 La Noche - Backend avec Stripe
+© 2025 La Noche - Backend Complet Fusionné
