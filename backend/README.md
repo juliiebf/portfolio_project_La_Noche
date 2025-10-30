@@ -21,7 +21,6 @@ Backend Node.js + PostgreSQL + Stripe avec **authentification complète** et **s
 
 ### 1. Installation
 ```bash
-cd la-noche-backend-merged
 npm install
 ```
 
