@@ -1,0 +1,587 @@
+body {
+  margin: 0;
+  background-image: url("images/fond\ la\ noche.png");
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+/* Header principal */
+.top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 0.9rem;
+    }
+
+/* Logo à gauche */
+.logo-main {
+  width: 95px;
+  height: auto;
+  display: block;
+  margin-right: 2.4rem;
+}
+
+/* Menu centré horizontalement, bouton à droite */
+.main-nav {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+/* Les liens sont répartis sur toute la largeur */
+.nav-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2.1rem;
+  flex: 1 1 auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Style du bouton login, collé à droite */
+.login-btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background: #22aaff;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  padding: 0.7rem 1.65rem;
+  border-radius: 24px;
+  text-decoration: none;
+  box-shadow: 0 0 14px #22aaffa0;
+  transition: background 0.18s, box-shadow 0.18s;
+  border: none;
+  outline: none;
+  letter-spacing: 1.5px;
+  margin-left: 2rem;
+}
+
+.login-btn:hover,
+.login-btn:focus {
+  background: #167ad7;
+  box-shadow: 0 0 22px #22aaffcc;
+}
+
+/* Style nav liens menu */
+.nav-links li {
+  position: relative;
+}
+
+.nav-links li a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  padding: 6px 0;
+  background: none;
+  border-radius: 0;
+  position: relative;
+  display: inline-block;
+  transition: color 0.18s;
+}
+
+.nav-links li a.active,
+.nav-links li a:hover,
+.nav-links li a:focus {
+  color: #22aaff;
+}
+
+.nav-links li a::after {
+  content: "";
+  display: block;
+  width: 0%;
+  height: 2px;
+  background: #22aaff;
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  border-radius: 2px;
+  transition: width 0.23s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-links li a.active::after,
+.nav-links li a:hover::after,
+.nav-links li a:focus::after {
+  width: 100%;
+}
+
+.btn-red {
+  background: #22aaff;
+  color: #fff;
+  font-weight: bold;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  padding: 1rem 2.3rem;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  box-shadow: 0 0 18px #22aaffa0;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: 1.5px;
+  margin-bottom: 0.5rem;
+  margin-right: 12px;
+}
+
+.btn-red:hover,
+.btn-red:focus {
+  background: #167ad7;
+  box-shadow: 0 0 26px #22aaffbb;
+}
+
+.btn-red-outline {
+  background: #184d79;
+  color: #fff;
+  box-shadow: 0 0 18px #184d7990;
+  border-radius: 30px;
+  font-weight: bold;
+  font-size: 1.08rem;
+  padding: 1rem 2.3rem;
+  letter-spacing: 1.5px;
+  border: none;
+  outline: none;
+  transition: background 0.18s, box-shadow 0.18s;
+  text-decoration: none;
+  margin-right: 0;
+}
+
+.btn-red-outline:hover,
+.btn-red-outline:focus {
+  background: #22aaff;
+  color: #fff;
+  box-shadow: 0 0 22px #22aaffcc;
+}
+
+/* Cocktail grid */
+.cocktail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 2.5rem;
+  margin-top: 2.8rem;
+  padding-bottom: 4rem;
+}
+
+/* Cocktail card */
+.cocktail-card {
+  background: #181818;
+  border-radius: 0;
+  padding: 2.8rem 3.3rem 2.2rem 3.3rem;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 220px;
+  box-shadow: none;
+  border: 1.2px solid #282828;
+  transition: border 0.18s;
+  margin-bottom: 0.5rem;
+}
+
+.cocktail-card:hover {
+  border-color: #22aaff;
+}
+
+/* Cocktail title */
+.cocktail-title {
+  font-size: 1.36em;
+  font-weight: bold;
+  color: #eddca2;
+  margin-bottom: 1.1em;
+  letter-spacing: 1px;
+  position: relative;
+  transition: color 0.18s;
+  width: auto; /* retirer la largeur à 100% */
+  text-decoration: none;
+  border-bottom: 2.5px solid transparent;
+  padding-bottom: 4px;
+  display: inline-block;
+}
+.cocktail-card:hover .cocktail-title {
+  color: #22aaff;
+  border-bottom-color: #22aaff;
+}
+
+
+.cocktail-title::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 0;
+  height: 2.5px;
+  left: 0;
+  bottom: -2px;
+  background: #22aaff;
+  border-radius: 2px;
+  transition: width 0.23s cubic-bezier(0.4,0,0.2,1);
+}
+
+.cocktail-card:hover .cocktail-title::after {
+  width: 100%;
+}
+
+/* Cocktail ingredients */
+.cocktail-ingredients {
+  font-size: 1.09em;
+  color: #eed;
+  margin-bottom: 1.6em;
+  margin-top: 0.2em;
+  letter-spacing: 0.5px;
+  line-height: 1.7em;
+}
+
+/* Cocktail description */
+.cocktail-desc {
+  font-size: 1.03em;
+  color: #d2d2d2;
+  margin-top: 1.2em;
+  opacity: 0.97;
+  letter-spacing: 0.2px;
+  line-height: 1.65em;
+}
+
+/* Responsive */
+@media (max-width: 650px) {
+  .cocktail-card {
+    padding: 2rem 1rem 1.5rem 1rem;
+    min-height: 180px;
+  }
+  .cocktail-grid {
+    gap: 1.3rem;
+  }
+}
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+
+.logo-main {
+  width: 95px;
+  height: auto;
+  display: block;
+  margin-right: 2.4rem;
+}
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+.nav-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2.1rem;
+  flex: 1 1 auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.login-btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background: #22aaff;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  padding: 0.7rem 1.65rem;
+  border-radius: 24px;
+  text-decoration: none;
+  box-shadow: 0 0 14px #22aaffa0;
+  transition: background 0.18s, box-shadow 0.18s;
+  border: none;
+  outline: none;
+  letter-spacing: 1.5px;
+  margin-left: 2rem;
+}
+
+.login-btn:hover,
+.login-btn:focus {
+  background: #167ad7;
+  box-shadow: 0 0 22px #22aaffcc;
+}
+
+.nav-links li a,
+.btn-red,
+.btn-red-outline {
+  transition: color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+
+.nav-links li a.active,
+.nav-links li a:hover,
+.nav-links li a:focus {
+  color: #22aaff;
+}
+
+.nav-links li a::after {
+  content: "";
+  display: block;
+  width: 0%;
+  height: 2px;
+  background: #22aaff;
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  border-radius: 2px;
+  transition: width 0.23s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-links li a.active::after,
+.nav-links li a:hover::after,
+.nav-links li a:focus::after {
+  width: 100%;
+}
+
+.btn-red {
+  background: #22aaff;
+  color: #fff;
+  font-weight: bold;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  padding: 1rem 2.3rem;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  box-shadow: 0 0 18px #22aaffa0;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: 1.5px;
+  margin-bottom: 0.5rem;
+  margin-right: 12px;
+}
+
+.btn-red:hover,
+.btn-red:focus {
+  background: #167ad7;
+  box-shadow: 0 0 26px #22aaffbb;
+}
+
+.btn-red-outline {
+  background: #184d79;
+  color: #fff;
+  box-shadow: 0 0 18px #184d7990;
+  border-radius: 30px;
+  font-weight: bold;
+  font-size: 1.08rem;
+  padding: 1rem 2.3rem;
+  letter-spacing: 1.5px;
+  border: none;
+  outline: none;
+  transition: background 0.18s, box-shadow 0.18s;
+  text-decoration: none;
+  margin-right: 0;
+}
+
+.btn-red-outline:hover,
+.btn-red-outline:focus {
+  background: #22aaff;
+  color: #fff;
+  box-shadow: 0 0 22px #22aaffcc;
+}
+
+.hero-section {
+  min-height: 65vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 3rem 1rem;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1100px;
+  text-align: center;
+  margin-top: 2.4rem;
+}
+
+h1 {
+  font-size: 3.2em;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0 0 1.7rem 0;
+  letter-spacing: 1px;
+  color: #eddca2;
+  text-shadow: 0 0 25px #000, 0 4px 32px #eddca290;
+}
+
+.hero-content p {
+  font-size: 1.4em;
+  margin-bottom: 3rem;
+  color: #fff;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  margin-top: 3rem;
+}
+
+.background {
+  background-image: url('images/fond\ la\ noche.png');
+  background-size: cover;
+  background-position: center;  
+}
+
+.playlist-table {
+  width: 100%;
+  margin: 2rem auto;
+}
+.playlist-row {
+  display: flex;
+  align-items: center;
+  background: #181818;
+  border-bottom: 1px solid #222;
+  padding: 1rem 0.5rem;
+}
+.playlist-header {
+  color: #aaddff;
+  font-weight: bold;
+  background: #222;
+  border-bottom: 2px solid #22aaff;
+}
+.playlist-cover img {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 7px;
+  box-shadow: 0 2px 14px #2228;
+  background: #222;
+}
+.playlist-cover {
+  min-width: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.playlist-title {
+  flex: 2;
+  font-size: 1.15em;
+  color: #fff;
+  padding-left: 1rem;
+}
+.playlist-artist {
+  flex: 1.3;
+  font-size: 1.08em;
+  color: #eddca2;
+}
+@media (max-width: 650px) {
+  .playlist-title, .playlist-artist { font-size: 1em; }
+  .playlist-cover img { width: 38px; height: 38px; }
+}
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+main {
+  flex: 1;
+}
+/* Modal styles */
+.modal-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-popup {
+  background: #222;
+  border-radius: 6px;
+  box-shadow: 0 0 20px #22aaffaa;
+  padding: 2rem 2.3rem;
+  width: 320px;
+  max-width: 90vw;
+  color: #eee;
+}
+.modal-tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #444;
+}
+.modal-tabs .tab-btn {
+  flex: 1;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.modal-tabs .tab-btn.active {
+  color: #22aaff;
+  border-bottom: 3px solid #22aaff;
+}
+.modal-title {
+  font-size: 1.6em;
+  font-weight: 700;
+  color: #22aaff;
+  text-align: center;
+  margin-bottom: 1.09rem;
+  text-shadow: none !important;
+}
+form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: #cca;
+}
+form input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1.2rem;
+  border: none;
+  border-radius: 3px;
+  font-size: 1em;
+  background: #333;
+  color: #fff;
+}
+.modal-btn-main {
+  background: #22aaff;
+  color: black;
+  font-weight: 700;
+  border: none;
+  width: 100%;
+  padding: 0.7rem;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 0 12px #22aaffaa;
+  transition: background 0.3s;
+}
+.modal-btn-main:hover {
+  background: #0099dd;
+  color: #ddd;
+}
