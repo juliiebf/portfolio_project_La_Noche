@@ -10,7 +10,7 @@ const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
 const compression = require('compression');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_key');
-const index = require('./index')
+const index = require('../back-end/karaoke-ranking/index')
 const app = express();
 const PORT = process.env.PORT || 3001;
 
