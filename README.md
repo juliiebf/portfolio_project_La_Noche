@@ -33,6 +33,8 @@ Remplace 1 par l’id réel de la vidéo.
     Liste toutes les vidéos (GET /api/videos)
 curl http://localhost:3000/api/videos; echo
 
+    Tester l’erreur de connexion avec un corps JSON malformé ou pseudo vide :
+curl -X POST -H "Content-Type: application/json" -d '{}' http://localhost:3000/api/users/login; echo
 
 fonctions fichiers :
 
