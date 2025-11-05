@@ -3,11 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Événements - La Noche Karaoké Paris 9ème</title>
+  <title>Votes - La Noche Karaoké Paris 9ème</title> <!-- Titre modifié -->
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  </header>
 <body>
   <div class="background"></div>
   <header>
@@ -22,18 +20,100 @@
           <li><a href="boissons.html">Boissons</a></li>
           <li><a href="chansons.html">Chansons</a></li>
           <li><a href="galerie.html">Galerie</a></li>
-          <li><a href="evenements.html"class="active">Événements</a></li>
+          <li><a href="votes.html"class="active">Votes</a></li> 
           <li><a href="contact.html">Contact</a></li>
         </ul>
         <a href="#" id="openModal" class="login-btn">Se connecter</a>
       </nav>
     </div>
   </header>
-  <main>
-   <section class="hero-section">
+  <main> 
+    <section class="hero-section">
       <div class="hero-content">
-        <h1>Événements</h1>
-        <p>Les événements et soirées spéciales à venir au bar karaoké.</p>
+        <h1>Votes</h1>
+        <p>Votez pour vos interprétations préférées !</p>
+        
+        <h2>Uploader une vidéo</h2>
+        <form id="uploadForm">
+          <input type="file" id="videoFile" accept="video/*" required />
+          <button type="submit">Uploader</button>
+        </form>
+        
+        <h2>Vidéos</h2>
+        <table id="videoTable" border="1" style="width:100%; border-collapse: collapse; text-align: center;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Vidéo</th>
+              <th>Nom fichier</th>
+              <th>Votes</th>
+              <th>Votez</th>
+            </tr>
+          </thead>
+          <tbody id="videoList">
+            <!-- Les vidéos uploadées apparaîtront ici -->
+          </tbody>
+        </table>
+
+        <!-- Script JS d’upload et de votes -->
+        <script>
+          // Liste des vidéos uploadées (champ id, nom, url, votes)
+          let videos = [];
+          const uploadForm = document.getElementById('uploadForm');
+          const videoFileInput = document.getElementById('videoFile');
+          const videoList = document.getElementById('videoList');
+        
+          // Ajout d’une vidéo à la soumission du formulaire
+          uploadForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const file = videoFileInput.files[0];
+            if (!file) return alert("Veuillez sélectionner un fichier vidéo."); // Alerte si rien choisi
+            const url = URL.createObjectURL(file);
+            videos.push({id: videos.length + 1, name: file.name, url: url, votes: 0}); // Ajout vidéo dans le tableau
+            renderVideos(); // Actualise le tableau
+            uploadForm.reset();
+          });
+        
+          // Fonction d’affichage du tableau vidéos
+          function renderVideos() {
+            videoList.innerHTML = '';
+            videos.forEach((video, index) => {
+              const tr = document.createElement('tr');
+              // Numéro de ligne
+              const tdIndex = document.createElement('td');
+              tdIndex.textContent = index + 1;
+              tr.appendChild(tdIndex);
+              // Affichage miniature vidéo
+              const tdVideo = document.createElement('td');
+              const videoTag = document.createElement('video');
+              videoTag.src = video.url;
+              videoTag.width = 200;
+              videoTag.controls = true;
+              tdVideo.appendChild(videoTag);
+              tr.appendChild(tdVideo);
+              // Nom du fichier
+              const tdName = document.createElement('td');
+              tdName.textContent = video.name;
+              tr.appendChild(tdName);
+              // Compteur de votes
+              const tdVotes = document.createElement('td');
+              tdVotes.textContent = video.votes;
+              tr.appendChild(tdVotes);
+              // Bouton de vote
+              const tdVoteBtn = document.createElement('td');
+              const voteBtn = document.createElement('button');
+              voteBtn.textContent = 'Voter';
+              voteBtn.onclick = () => {
+                videos[index].votes++;
+                renderVideos();
+              };
+              tdVoteBtn.appendChild(voteBtn);
+              tr.appendChild(tdVoteBtn);
+
+              videoList.appendChild(tr);
+            });
+          }
+        </script>
       </div>
     </section>
   </main>
@@ -43,7 +123,7 @@
     <a href="contact.html" style="color: #22aaff; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid transparent; padding: 6px 14px; border-radius: 15px; background: rgba(34, 170, 255, 0.1); transition: background 0.3s, border-color 0.3s;">Contactez-nous</a>
   </footer>
 
-  <!-- Pop-up connexion stylisé -->
+  <!-- Pop-up connexion -->
   <div class="modal-bg" id="popupLogin">
     <div class="modal-popup">
       <div class="modal-tabs">
@@ -76,6 +156,7 @@
   </div>
 
   <script>
+    // Gestion ouverture/fermeture du pop-up login
     const openModalBtn = document.getElementById("openModal");
     const popupLogin = document.getElementById("popupLogin");
     openModalBtn.onclick = function(e) {
@@ -85,6 +166,7 @@
     popupLogin.onclick = function(e) {
       if (e.target === this) this.style.display = "none";
     };
+    // Gestion des onglets connexion / inscription
     const tabSignIn = document.getElementById("tabSignIn");
     const tabSignUp = document.getElementById("tabSignUp");
     const signInForm = document.getElementById("signInForm");

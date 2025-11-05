@@ -6,162 +6,6 @@
   <title>Boissons - La Noche Karaoké Paris 9ème</title>
   <meta name="description" content="La Noche - Le karaoké premium de Paris dans les caves voûtées de Pigalle." />
   <link rel="stylesheet" href="style.css" />
-  <style>
-    .cocktail-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 2.5rem;
-      margin-top: 2.8rem;
-      padding-bottom: 4rem;
-    }
-    .cocktail-card {
-      background: #181818;
-      border-radius: 0;
-      padding: 2.8rem 2.3rem 2.2rem 2.3rem;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      min-height: 340px;
-      box-shadow: none;
-      border: 1.2px solid #282828;
-      transition: border 0.18s;
-      margin-bottom: 0.5rem;
-    }
-    .cocktail-card:hover {
-      border-color: #22aaff;
-    }
-    .cocktail-title {
-      font-size: 1.36em;
-      font-weight: bold;
-      color: #eddca2;
-      margin-bottom: 1.1em;
-      letter-spacing: 1px;
-      position: relative;
-      transition: color 0.18s;
-    }
-    .cocktail-card:hover .cocktail-title {
-      color: #22aaff;
-    }
-    .cocktail-title::after {
-      content: "";
-      display: block;
-      position: absolute;
-      width: 0;
-      height: 2.5px;
-      left: 0;
-      bottom: -2px;
-      background: #22aaff;
-      border-radius: 2px;
-      transition: width 0.23s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .cocktail-card:hover .cocktail-title::after {
-      width: 100%;
-    }
-    .cocktail-ingredients {
-      font-size: 1.09em;
-      color: #eed;
-      margin-bottom: 1.6em;
-      margin-top: 0.2em;
-      letter-spacing: 0.5px;
-      line-height: 1.7em;
-    }
-    .cocktail-desc {
-      font-size: 1.03em;
-      color: #d2d2d2;
-      margin-top: 1.2em;
-      opacity: 0.97;
-      letter-spacing: 0.2px;
-      line-height: 1.65em;
-    }
-    /* Modal styles */
-    .modal-bg {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .modal-popup {
-      background: #222;
-      border-radius: 6px;
-      box-shadow: 0 0 20px #22aaffaa;
-      padding: 2rem 3rem;
-      width: 320px;
-      max-width: 90vw;
-      color: #eee;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .modal-tabs {
-      display: flex;
-      margin-bottom: 1rem;
-      border-bottom: 1px solid #444;
-    }
-    .modal-tabs .tab-btn {
-      flex: 1;
-      padding: 0.5rem;
-      background: none;
-      border: none;
-      color: #aaa;
-      font-weight: 600;
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-    .modal-tabs .tab-btn.active {
-      color: #22aaff;
-      border-bottom: 3px solid #22aaff;
-    }
-    .modal-title {
-      margin: 0 0 1.2rem 0;
-      font-size: 1.6em;
-      font-weight: 700;
-      color: #22aaff;
-      text-align: center;
-      text-shadow: 0 0 8px #22aaff55;
-    }
-    form label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 0.3rem;
-      letter-spacing: 0.05em;
-      color: #cca;
-    }
-    form input {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1.2rem;
-      border: none;
-      border-radius: 3px;
-      font-size: 1em;
-    }
-    .modal-btn-main {
-      background: #22aaff;
-      color: black;
-      font-weight: 700;
-      border: none;
-      width: 100%;
-      padding: 0.7rem;
-      border-radius: 5px;
-      cursor: pointer;
-      box-shadow: 0 0 12px #22aaffaa;
-      transition: background 0.3s;
-    }
-    .modal-btn-main:hover {
-      background: #0099dd;
-      color: #ddd;
-    }
-    @media (max-width: 650px) {
-      .cocktail-card {
-        padding: 2rem 1rem 1.5rem 1rem;
-        min-height: 240px;
-      }
-      .cocktail-grid {
-        gap: 1.3rem;
-      }
-    }
-  </style>
 </head>
 <body>
   <div class="background"></div>
@@ -177,7 +21,7 @@
           <li><a href="boissons.html" class="active">Boissons</a></li>
           <li><a href="chansons.html">Chansons</a></li>
           <li><a href="galerie.html">Galerie</a></li>
-          <li><a href="evenements.html">Événements</a></li>
+          <li><a href="Votes.html">Votes</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
         <a href="#" id="openModal" class="login-btn">Se connecter</a>
@@ -336,7 +180,7 @@
     <a href="contact.html" style="color: #22aaff; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid transparent; padding: 6px 14px; border-radius: 15px; background: rgba(34, 170, 255, 0.1); transition: background 0.3s, border-color 0.3s;">Contactez-nous</a>
   </footer>
 
- <!-- Pop-up connexion stylisé -->
+ <!-- Pop-up connexion -->
   <div class="modal-bg" id="popupLogin">
     <div class="modal-popup">
       <div class="modal-tabs">
