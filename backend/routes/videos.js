@@ -1,7 +1,8 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const db = require('../db');
+const db = require('../database/db');
+const { authenticateToken } = require('../middleware/authenticateToken');
 const router = express.Router();
 
 // Configuration multer : stockage des fichiers uploadés dans ./uploads avec nom unique
@@ -11,17 +12,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Middleware pour vérifier si l'utilisateur est connecté
-function isLoggedIn(req, res, next) {
-  if (!req.session || !req.session.user) {
-    return res.status(401).json({ error: "Utilisateur non connecté, veuillez d'abord vous connecter." });
-  }
-  req.user = req.session.user;
-  next();
-}
-
 // POST /api/videos/upload : upload d'une vidéo, fichier 'video'
-router.post('/upload', isLoggedIn, upload.single('video'), async (req, res) => {
+// Protection JWT
+router.post('/upload', authenticateToken, upload.single('video'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Aucun fichier vidéo uploadé.' });
     // Insère la vidéo en base associée à l'utilisateur
@@ -31,12 +24,14 @@ router.post('/upload', isLoggedIn, upload.single('video'), async (req, res) => {
     );
     res.status(201).json({ message: 'Vidéo uploadée.', video: result.rows[0] });
   } catch (err) {
+    console.error('Erreur lors de l\'upload de la vidéo :', err);
     res.status(500).json({ error: "Erreur serveur lors de l'upload de la vidéo." });
   }
 });
 
 // POST /api/videos/:id/like : like une vidéo par utilisateur (un seul like)
-router.post('/:id/like', isLoggedIn, async (req, res) => {
+// Protection JWT
+router.post('/:id/like', authenticateToken, async (req, res) => {
   const videoId = parseInt(req.params.id);
   if (isNaN(videoId)) return res.status(400).json({ error: 'ID vidéo invalide' });
 
@@ -58,16 +53,18 @@ router.post('/:id/like', isLoggedIn, async (req, res) => {
 });
 
 // GET /api/videos : liste toutes les vidéos avec likes et utilisateur
+// (Pas besoin d'être connecté pour voir la liste)
 router.get('/', async (req, res) => {
   try {
     const result = await db.query(`
       SELECT v.id, v.filename, v.likes, u.username
       FROM videos v
       JOIN users u ON v.user_id = u.id
-      ORDER BY v.id DESC
+      ORDER BY v.likes DESC, v.created_at DESC;
     `);
     res.json(result.rows);
   } catch (err) {
+    console.error('Erreur dans /api/videos :', err);
     res.status(500).json({ error: "Erreur serveur lors de la récupération des vidéos." });
   }
 });

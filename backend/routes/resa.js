@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
+const pool = require('../database/db');
+const { authenticateToken } = require('../middleware/authenticateToken');
 
 // POST / : créer une réservation
 router.post('/', authenticateToken, async (req, res) => {
