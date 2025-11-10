@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const db = require('../database/db');
+const db = require('../db');
 const { authenticateToken } = require('../middleware/authenticateToken');
 const router = express.Router();
 
