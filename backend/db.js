@@ -1,24 +1,47 @@
 require('dotenv').config();
-const { Pool } = require('pg');
+const { Pool, Client } = require('pg');
 const bcrypt = require('bcrypt');
 
-console.log('🔄 Initialisation de la base La Noche...');
+const dbName = process.env.POSTGRES_DATABASE || process.env.DB_NAME || 'karaoke_db';
+
+async function createDatabaseIfNotExists() {
+  const client = new Client({
+    host: process.env.POSTGRES_HOST || process.env.DB_HOST || 'localhost',
+    port: process.env.POSTGRES_PORT || process.env.DB_PORT || 5432,
+    user: process.env.POSTGRES_USER || process.env.DB_USER,
+    password: process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD,
+    database: 'postgres'
+  });
+
+  await client.connect();
+
+  const res = await client.query(`SELECT 1 FROM pg_database WHERE datname = $1`, [dbName]);
+  if (res.rowCount === 0) {
+    await client.query(`CREATE DATABASE ${dbName}`);
+    console.log(`Base de données '${dbName}' créée.`);
+  } else {
+    console.log(`Base de données '${dbName}' existe déjà.`);
+  }
+
+  await client.end();
+}
 
 const pool = new Pool({
   host: process.env.POSTGRES_HOST || process.env.DB_HOST || 'localhost',
   port: process.env.POSTGRES_PORT || process.env.DB_PORT || 5432,
   user: process.env.POSTGRES_USER || process.env.DB_USER,
   password: process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD,
-  database: process.env.POSTGRES_DATABASE || process.env.DB_NAME || 'karaoke_db'
+  database: dbName
 });
 
 async function initDatabase() {
-  const client = await pool.connect();
-
   try {
+    await createDatabaseIfNotExists();
+
+    const client = await pool.connect();
+
     console.log('✅ Connexion PostgreSQL établie');
 
-    // Création de la table users
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -32,7 +55,6 @@ async function initDatabase() {
     `);
     console.log('✅ Table users créée');
 
-    // Création de la table salles
     await client.query(`
       CREATE TABLE IF NOT EXISTS salles (
         id SERIAL PRIMARY KEY,
@@ -44,7 +66,6 @@ async function initDatabase() {
     `);
     console.log('✅ Table salles créée');
 
-    // Création de la table reservations
     await client.query(`
       CREATE TABLE IF NOT EXISTS reservations (
         id SERIAL PRIMARY KEY,
@@ -56,12 +77,26 @@ async function initDatabase() {
         nombre_personnes INT NOT NULL CHECK (nombre_personnes > 0),
         status VARCHAR(50) DEFAULT 'confirmee',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        payment_intent_id VARCHAR(255),
         CONSTRAINT check_heures CHECK (heure_fin > heure_debut)
       )
     `);
-    console.log('✅ Table reservations créée');
+    console.log('✅ Table reservations (avec Stripe) créée');
 
-    // Création de la table videos
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='reservations' 
+            AND column_name='payment_intent_id'
+        ) THEN
+          ALTER TABLE reservations ADD COLUMN payment_intent_id VARCHAR(255);
+        END IF;
+      END
+      $$;
+    `);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS videos (
         id SERIAL PRIMARY KEY,
@@ -73,7 +108,6 @@ async function initDatabase() {
     `);
     console.log('✅ Table videos créée');
 
-    // Création de la table likes
     await client.query(`
       CREATE TABLE IF NOT EXISTS likes (
         id SERIAL PRIMARY KEY,
@@ -84,7 +118,6 @@ async function initDatabase() {
     `);
     console.log('✅ Table likes créée');
 
-    // Création des index
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_reservations_user ON reservations(user_id);
@@ -95,7 +128,6 @@ async function initDatabase() {
     `);
     console.log('✅ Index créés');
 
-    // Insérer salles initiales si elles n'existent pas encore
     const resSalles = await client.query(`SELECT COUNT(*) FROM salles`);
     if (parseInt(resSalles.rows[0].count, 10) === 0) {
       await client.query(`
@@ -107,7 +139,6 @@ async function initDatabase() {
       console.log('✅ Salles initiales insérées');
     }
 
-    // Créer admin par défaut si non existant
     const adminEmail = 'admin@lanoche.fr';
     const adminPassword = 'AdminLaNoche2025!';
     const saltRounds = 12;
@@ -127,21 +158,13 @@ async function initDatabase() {
     }
 
     console.log('\n✅ Initialisation terminée avec succès !');
+    
+    client.release();
+
   } catch (error) {
     console.error('❌ Erreur initialisation:', error);
     throw error;
-  } finally {
-    client.release();
-    await pool.end();
   }
 }
 
-initDatabase()
-  .then(() => {
-    console.log('\n✨ Base de données prête !');
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('\n❌ Échec:', error.message);
-    process.exit(1);
-  });
+module.exports = { initDatabase, pool };
