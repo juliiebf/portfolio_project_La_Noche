@@ -1,0 +1,527 @@
+html, body {
+  background: #000 !important;
+}
+.background { background: #000 !important; }
+.chanson-header {
+  text-align: center;
+  padding: 3rem 0 1.7rem 0;
+  background: #000;
+}
+
+/* =============================== */
+/* === Variables couleurs adaptées === */
+:root {
+  --gold-beige: #eddca2;
+  --gray-light: #dcdcdc;
+  --gray-darker: #444; 
+  --bg-black: #000; 
+  --btn-blue: #22aaff; 
+}
+
+/* =============================== */
+/* === Reset global & Fond général === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-black);
+  color: var(--gray-light);
+  font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+  line-height: 1.5;
+}
+
+/* Contenu principal prend toute la hauteur restante */
+main {
+  flex: 1 0 auto;
+}
+
+/* =============================== */
+/* === Header & Navigation === */
+.top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: .9rem 3vw;
+  background-color: var(--bg-black); /* Fond noir pour header */
+}
+.logo-main {
+  width: 95px;
+  height: auto;
+  display: block;
+  margin-right: 2.4rem;
+}
+.main-nav {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+}
+.nav-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2.1rem;
+  flex: 1 1 auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.nav-links li {
+  position: relative;
+}
+.nav-links li a {
+  color: var(--gray-light); /* Liens gris clair */
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  padding: 6px 0;
+  background: none;
+  position: relative;
+  display: inline-block;
+  transition: color 0.18s;
+}
+.nav-links li a.active,
+.nav-links li a:hover,
+.nav-links li a:focus {
+  color: var(--btn-blue); /* Bleu boutons survol */
+}
+.nav-links li a::after {
+  content: "";
+  display: block;
+  width: 0%;
+  height: 2px;
+  background: var(--btn-blue);
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  border-radius: 2px;
+  transition: width 0.23s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-links li a.active::after,
+.nav-links li a:hover::after,
+.nav-links li a:focus::after {
+  width: 100%;
+}
+
+/* Bouton connexion */
+.login-btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--btn-blue);
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  padding: 0.7rem 1.65rem;
+  border-radius: 24px;
+  text-decoration: none;
+  box-shadow: 0 0 14px #22aaffa0;
+  transition: background 0.18s, box-shadow 0.18s;
+  border: none;
+  outline: none;
+  letter-spacing: 1.5px;
+  margin-left: 2rem;
+}
+.login-btn:hover,
+.login-btn:focus {
+  background: #167ad7;
+  box-shadow: 0 0 22px #22aaffcc;
+}
+
+/* =============================== */
+/* === Hero section - titres === */
+.hero-section {
+  min-height: 55vh;
+  margin: 2rem auto 1rem auto;
+  max-width: 1000px;
+  background-color: var(--bg-black); /* Fond noir uni */
+  border-radius: 20px;
+  padding: 4rem 2rem 2.5rem 2rem;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  box-shadow: none;
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  text-align: center;
+  margin-top: 2.4rem;
+}
+h1, h2 {
+  color: var(--gold-beige); /* Jaune beige clair */
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(221,220,162,0.7);
+}
+h1 {
+  font-size: 3.2em;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0 0 1.7rem 0;
+}
+h2 {
+  font-size: 2em;
+  margin: 2.8rem 0 1.7rem 0;
+}
+.hero-content p {
+  font-size: 1.38em;
+  margin-bottom: 2.6rem;
+  color: var(--gray-light);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+/* =============================== */
+/* === Boutons principaux inchangés === */
+.btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 2.1rem;
+  margin-top: 3rem;
+}
+.btn-primary, .btn-secondary, .btn-red, .btn-red-outline {
+  padding: 1rem 2.3rem;
+  border-radius: 30px;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: 1.5px;
+  transition: all 0.2s;
+}
+.btn-primary, .btn-red {
+  background-color: var(--btn-blue);
+  color: #fff;
+  font-size: 1.08rem;
+  box-shadow: 0 0 16px #22aaffa0;
+  border: none;
+}
+.btn-primary:hover, .btn-red:hover,
+.btn-primary:focus, .btn-red:focus {
+  background-color: #167ad7;
+  box-shadow: 0 0 27px #22aaffcc;
+}
+.btn-secondary, .btn-red-outline {
+  background: transparent;
+  border: 2px solid var(--btn-blue);
+  color: var(--btn-blue);
+}
+.btn-secondary:hover, .btn-red-outline:hover,
+.btn-secondary:focus, .btn-red-outline:focus {
+  background: #184d79;
+  color: #fff;
+  box-shadow: 0 0 18px #184d7990;
+}
+
+/* =============================== */
+/* === Formulaire upload vidéo === */
+#uploadForm {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  background-color: #222; /* Gris foncé pour contraste */
+  padding: 16px 24px;
+  border-radius: 16px;
+  box-shadow: 0 0 20px #0008;
+  margin: 30px auto 30px auto;
+  width: 90%;
+  max-width: 800px;
+}
+#uploadForm input[type="file"] {
+  color: var(--gray-light);
+  background: #1c1c1c;
+  padding: 6px;
+  border: none;
+  border-radius: 7px;
+}
+#uploadForm button {
+  background: var(--btn-blue);
+  color: #fff;
+  font-weight: bold;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 18px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+#uploadForm button:hover {
+  background: #0075c2;
+}
+
+/* =============================== */
+/* === Tableau vidéo - nuances de gris === */
+#videoTable {
+  background-color: var(--gray-light); /* Fond gris clair */
+  border-collapse: separate;
+  border-spacing: 12px 14px;
+  border-radius: 16px;
+  width: 96%;
+  margin: 0 auto 2rem auto;
+  box-shadow: none;
+}
+#videoTable th {
+  background-color: var(--bg-black); /* Fond noir pour entête */
+  color: var(--gold-beige); /* Titres jaunes/beige */
+  font-size: 1.15em;
+  letter-spacing: 1px;
+  padding: 12px 10px;
+  border-bottom: 2px solid var(--gray-darker);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+#videoTable tr:last-child td:first-child {
+  border-bottom-left-radius: 16px;
+}
+#videoTable tr:last-child td:last-child {
+  border-bottom-right-radius: 16px;
+}
+#videoList tr {
+  background-color: var(--bg-black); /* Fond noir lignes */
+  border-radius: 16px;
+  transition: box-shadow 0.25s;
+}
+#videoList tr:hover {
+  box-shadow: 0 0 12px var(--btn-blue);
+}
+#videoList td {
+  color: var(--gray-light);
+  padding: 18px 12px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 1em;
+  border: none;
+}
+#videoList video {
+  border-radius: 8px;
+  box-shadow: 0 0 10px #0009;
+  background: #121212;
+  max-width: 200px;
+  max-height: 110px;
+}
+/* Bouton vote */
+#videoList button {
+  background-color: var(--gold-beige);
+  color: var(--bg-black);
+  font-weight: bold;
+  border: none;
+  border-radius: 18px;
+  padding: 8px 20px;
+  box-shadow: 0 2px 8px #ffd66b22;
+  transition: background-color 0.25s;
+  cursor: pointer;
+}
+#videoList button:hover {
+  background-color: #ffecb3;
+}
+
+/* ================================================================ */
+/* === Cartes cocktails (pour cohérence dans le site) === */
+
+.cocktail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2.5rem;
+  margin-top: 2.8rem;
+  padding-bottom: 4rem;
+  gap: 1.3rem;
+}
+
+.cocktail-card {
+  background: #181818;
+  border-radius: 0;
+  padding: 2.8rem 2.3rem 2.2rem 2.3rem;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 340px;
+  box-shadow: none;
+  border: 1.2px solid #282828;
+  transition: border 0.18s;
+  margin-bottom: 0.5rem;
+}
+.cocktail-card:hover {
+  border-color: var(--btn-blue);
+  border-color: #22aaff;
+}
+.cocktail-title {
+  color: var(--gold-beige);
+  font-size: 1.36em;
+  font-weight: bold;
+  margin-bottom: 1.1em;
+  letter-spacing: 1px;
+  position: relative;
+  transition: color 0.18s;
+  width: auto;
+  text-decoration: none;
+  border-bottom: 2.5px solid transparent;
+  padding-bottom: 4px;
+  display: inline-block;
+}
+.cocktail-card:hover .cocktail-title {
+  color: var(--btn-blue);
+  border-bottom-color: var(--btn-blue);
+}
+.cocktail-title::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 0;
+  height: 2.5px;
+  left: 0;
+  bottom: -2px;
+  background: var(--btn-blue);
+  border-radius: 2px;
+  transition: width 0.23s cubic-bezier(0.4,0,0.2,1);
+}
+.cocktail-card:hover .cocktail-title::after {
+  width: 100%;
+}
+.cocktail-ingredients {
+  font-size: 1.09em;
+  color: var(--gray-light);
+  margin-bottom: 1.6em;
+  margin-top: 0.2em;
+  letter-spacing: 0.5px;
+  line-height: 1.7em;
+}
+.cocktail-desc {
+  font-size: 1.03em;
+  color: var(--gray-light);
+  margin-top: 1.2em;
+  opacity: 0.97;
+  letter-spacing: 0.2px;
+  line-height: 1.65em;
+}
+
+/* ===================== Responsive design ===================== */
+@media (max-width: 900px) {
+  .hero-section { padding: 2rem .6rem; }
+  .hero-content { margin-top: 1.2rem; }
+  .top-header { flex-direction: column; gap: 0.7rem; }
+  .cocktail-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 650px) {
+  .cocktail-card { padding: 2rem 1rem 1.5rem 1rem; min-height: 170px; }
+  .cocktail-grid { gap: 1.2rem; }
+}
+
+/* ===================== */
+/* === POP-UP CONNEXION === */
+
+/* Fond semi-transparent en overlay */
+.modal-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: none; /* Caché par défaut */
+  align-items: center;
+  justify-content: center;
+  z-index: 1000; /* Priorité d’affichage élevée */
+}
+
+/* Conteneur principal popup avec fond foncé */
+.modal-popup {
+  background: #222;
+  border-radius: 8px;
+  padding: 2rem 2.3rem;
+  width: 320px;
+  max-width: 95vw;
+  color: #eee;
+  box-shadow: 0 0 18px #222b;
+}
+
+/* Barre d’onglets pour basculer connexion/inscription */
+.modal-tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #444;
+}
+
+/* Boutons onglets style épuré */
+.modal-tabs .tab-btn {
+  flex: 1;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  color: #aaa; /* Gris neutre */
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+/* Onglet actif lumineux bleu */
+.modal-tabs .tab-btn.active {
+  color: var(--btn-blue);
+  border-bottom: 3px solid var(--btn-blue);
+}
+
+/* Titres des formulaires dans modal */
+.modal-title {
+  font-size: 1.6em;
+  font-weight: 700;
+  color: var(--btn-blue);
+  text-align: center;
+  margin-bottom: 1.09rem;
+  text-shadow: none !important;
+}
+
+/* Labels des champs */
+form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: #cca;
+}
+
+/* Champs inputs formulaire */
+form input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1.2rem;
+  border: none;
+  border-radius: 3px;
+  font-size: 1em;
+  background: #333;
+  color: #fff;
+}
+
+/* Bouton principal connexion/inscription */
+.modal-btn-main {
+  background: var(--btn-blue);
+  color: black;
+  font-weight: 700;
+  border: none;
+  width: 100%;
+  padding: 0.7rem;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 0 12px var(--btn-blue);
+  transition: background 0.3s;
+}
+
+.modal-btn-main:hover {
+  background: #0099dd;
+  color: #ddd;
+}
+
+/* =============================== */
+/* === Footer sticky en bas de page === */
+footer {
+  flex-shrink: 0;
+  background-color: var(--bg-black);
+  color: var(--gray-light);
+  padding: 1rem 3vw;
+  text-align: center;
+  border-top: 1px solid var(--gray-darker);
+}
