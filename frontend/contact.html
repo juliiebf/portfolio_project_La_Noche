@@ -5,9 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Contact - La Noche Karaoké Paris 9ème</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .contact-card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2rem;
+      border-radius: 15px;
+      text-align: center;
+      border: 1px solid rgba(237, 220, 162, 0.2);
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    .contact-card:hover {
+      transform: translateY(-10px);
+      border-color: rgba(237, 220, 162, 0.6);
+      box-shadow: 0 10px 30px rgba(34, 170, 255, 0.2);
+    }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin: 3rem 0;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .contact-icon {
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 70px;
+    }
+    .contact-icon svg {
+      transition: transform 0.3s ease;
+    }
+    .contact-card:hover .contact-icon svg {
+      transform: scale(1.1);
+    }
+    .contact-title {
+      color: #eddca2;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    .contact-info {
+      color: #ddd;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    .contact-link {
+      color: #22aaff;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+    .contact-link:hover {
+      color: #5bc0ff;
+    }
+    .map-container {
+      margin: 3rem auto;
+      max-width: 900px;
+    }
+    .map-title {
+      color: #eddca2;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 700;
+    }
+    .map-wrapper {
+      border-radius: 15px;
+      overflow: hidden;
+      border: 2px solid rgba(237, 220, 162, 0.3);
+    }
+    .hours-section {
+      margin: 3rem auto;
+      max-width: 600px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2rem;
+      border-radius: 15px;
+      border: 1px solid rgba(237, 220, 162, 0.2);
+    }
+    .hours-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ddd;
+      font-size: 1.1rem;
+    }
+    .hours-row:last-child {
+      border-bottom: none;
+    }
+    .hours-time {
+      color: #22aaff;
+      font-weight: 600;
+    }
+  </style>
 </head>
-<body>
-</header>
 <body>
   <div class="background"></div>
   <header>
@@ -22,28 +116,174 @@
           <li><a href="boissons.html">Boissons</a></li>
           <li><a href="chansons.html">Chansons</a></li>
           <li><a href="galerie.html">Galerie</a></li>
-          <li><a href="Votes.html">Votes</a></li>
+          <li><a href="votes.html">Votes</a></li>
           <li><a href="contact.html" class="active">Contact</a></li>
         </ul>
         <a href="#" id="openModal" class="login-btn">Se connecter</a>
       </nav>
     </div>
   </header>
+  
   <main>
-     <section class="hero-section">
+    <section class="hero-section">
       <div class="hero-content">
         <h1>Contact</h1>
-        <p>Nous joindre, adresse, téléphone et formulaire de contact.</p>
+        
+        <!-- Grille d'informations de contact -->
+        <div class="contact-grid">
+          
+          <!-- Carte Adresse -->
+          <div class="contact-card">
+            <div class="contact-icon">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#eddca2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+            <h3 class="contact-title">Adresse</h3>
+            <p class="contact-info">
+              42 Rue des Martyrs<br/>
+              75009 Paris
+            </p>
+          </div>
+
+          <!-- Carte Métro -->
+          <div class="contact-card">
+            <div class="contact-icon">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#eddca2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="6" width="18" height="14" rx="2"></rect>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+                <path d="M8 14v4"></path>
+                <path d="M16 14v4"></path>
+                <circle cx="8" cy="18" r="1" fill="#eddca2"></circle>
+                <circle cx="16" cy="18" r="1" fill="#eddca2"></circle>
+              </svg>
+            </div>
+            <h3 class="contact-title">Métro</h3>
+            <p class="contact-info">
+              Station Saint-Georges<br/>
+              <span style="font-size: 0.9rem; color: #aaa;">Ligne 12</span>
+            </p>
+          </div>
+
+          <!-- Carte Téléphone -->
+          <div class="contact-card">
+            <div class="contact-icon">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#eddca2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            </div>
+            <h3 class="contact-title">Téléphone</h3>
+            <p class="contact-info">
+              <a href="tel:0142824282" class="contact-link">01 42 82 42 82</a>
+            </p>
+          </div>
+
+          <!-- Carte Instagram -->
+          <div class="contact-card">
+            <div class="contact-icon">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#eddca2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+            </div>
+            <h3 class="contact-title">Instagram</h3>
+            <p class="contact-info">
+              <a href="https://www.instagram.com/lanoche" target="_blank" class="contact-link">@lanoche</a>
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Section Google Maps -->
+        <div class="map-container">
+          <h2 class="map-title">Nous trouver</h2>
+          <div class="map-wrapper">
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2624.216445736588!2d2.336854315674!3d48.87686807928831!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e66e3e8c642c4b%3A0x8c3c3c3c3c3c3c3c!2s42%20Rue%20des%20Martyrs%2C%2075009%20Paris!5e0!3m2!1sfr!2sfr!4v1234567890123!5m2!1sfr!2sfr" 
+              width="100%" 
+              height="400" 
+              style="border:0;" 
+              allowfullscreen="" 
+              loading="lazy" 
+              referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+          </div>
+        </div>
+
+        <!-- Horaires d'ouverture -->
+        <div class="hours-section">
+          <h2 class="map-title">Horaires d'ouverture</h2>
+          <div>
+            <div class="hours-row">
+              <span>Lundi - Jeudi</span>
+              <span class="hours-time">18h00 - 02h00</span>
+            </div>
+            <div class="hours-row">
+              <span>Vendredi - Samedi</span>
+              <span class="hours-time">18h00 - 04h00</span>
+            </div>
+            <div class="hours-row">
+              <span>Dimanche</span>
+              <span class="hours-time">18h00 - 00h00</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
   </main>
-<footer style="background-color: #10060611; color: #777777; padding: 1rem 2rem; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-    <p style="margin: 0 0 0.5rem 0;">© 2025 La Noche Karaoké Paris. Tous droits réservés</p>
-    <p style="margin: 0 0 1rem 0;">42 Rue des Martyrs, 75009 Paris | 01 42 82 42 82</p>
-    <a href="contact.html" style="color: #22aaff; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid transparent; padding: 6px 14px; border-radius: 15px; background: rgba(34, 170, 255, 0.1); transition: background 0.3s, border-color 0.3s;">Contactez-nous</a>
+
+  <footer style="background-color: #10060611; color: #777777; padding: 2rem 2rem; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem;">© 2025 La Noche Karaoké Paris. Tous droits réservés</p>
+      
+      <div style="margin: 1rem 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; align-items: center;">
+        <!-- Adresse -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#777777" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <span style="font-size: 0.95rem;">42 Rue des Martyrs, 75009 Paris</span>
+        </div>
+        
+        <!-- Métro -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#777777" stroke-width="2">
+            <rect x="3" y="6" width="18" height="14" rx="2"></rect>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span style="font-size: 0.95rem;">Métro Saint-Georges</span>
+        </div>
+        
+        <!-- Téléphone -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#777777" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          <a href="tel:0142824282" style="color: #777777; text-decoration: none; font-size: 0.95rem;">01 42 82 42 82</a>
+        </div>
+        
+        <!-- Instagram -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22aaff" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+          </svg>
+          <a href="https://www.instagram.com/lanoche" target="_blank" style="color: #22aaff; text-decoration: none; font-size: 0.95rem; font-weight: 600;">@lanoche</a>
+        </div>
+      </div>
+      
+      <div style="margin-top: 1.5rem;">
+        <a href="contact.html" style="color: #22aaff; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid transparent; padding: 8px 16px; border-radius: 15px; background: rgba(34, 170, 255, 0.1); transition: background 0.3s, border-color 0.3s; display: inline-block;">Contactez-nous</a>
+      </div>
+    </div>
   </footer>
 
- <!-- Pop-up connexion -->
+  <!-- Pop-up connexion -->
   <div class="modal-bg" id="popupLogin">
     <div class="modal-popup">
       <div class="modal-tabs">
@@ -52,9 +292,9 @@
       </div>
       <div id="signInForm">
         <h2 class="modal-title">Connexion</h2>
-        <form>
-          <label for="username">Nom d'utilisateur</label>
-          <input type="text" id="username" name="username" autocomplete="username" required />
+        <form> 
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required />
           <label for="password">Mot de passe</label>
           <input type="password" id="password" name="password" autocomplete="current-password" required />
           <button type="submit" class="modal-btn-main">SE CONNECTER</button>
@@ -63,12 +303,18 @@
       <div id="signUpForm" style="display:none;">
         <h2 class="modal-title">Nouveau compte</h2>
         <form>
-          <label for="newusername">Nom d'utilisateur</label>
-          <input type="text" id="newusername" name="newusername" autocomplete="username" required />
+          <label for="firstname">Prénom</label>
+          <input type="text" id="firstname" name="firstname" autocomplete="given-name" required />
+
+          <label for="lastname">Nom</label>
+          <input type="text" id="lastname" name="lastname" autocomplete="family-name" required />
+
           <label for="newemail">Email</label>
           <input type="email" id="newemail" name="newemail" autocomplete="email" required />
+
           <label for="newpassword">Mot de passe</label>
           <input type="password" id="newpassword" name="newpassword" autocomplete="new-password" required />
+
           <button type="submit" class="modal-btn-main">CRÉER LE COMPTE</button>
         </form>
       </div>
@@ -76,6 +322,9 @@
   </div>
 
   <script>
+    const API_URL = 'http://localhost:3000';
+    
+    // Gestion ouverture/fermeture du pop-up login
     const openModalBtn = document.getElementById("openModal");
     const popupLogin = document.getElementById("popupLogin");
     openModalBtn.onclick = function(e) {
@@ -85,6 +334,8 @@
     popupLogin.onclick = function(e) {
       if (e.target === this) this.style.display = "none";
     };
+    
+    // Gestion des onglets connexion / inscription
     const tabSignIn = document.getElementById("tabSignIn");
     const tabSignUp = document.getElementById("tabSignUp");
     const signInForm = document.getElementById("signInForm");
@@ -101,6 +352,64 @@
       signInForm.style.display = "none";
       signUpForm.style.display = "";
     };
+
+    // Gestion du formulaire de connexion
+    document.querySelector('#signInForm form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          alert('Connexion réussie !');
+          document.getElementById('popupLogin').style.display = 'none';
+          location.reload();
+        } else {
+          alert('Erreur : ' + data.error);
+        }
+      } catch (err) {
+        alert('Erreur de connexion');
+      }
+    });
+
+    // Gestion du formulaire d'inscription
+    document.querySelector('#signUpForm form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('newemail').value;
+      const password = document.getElementById('newpassword').value;
+      const prenom = document.getElementById('firstname').value;
+      const nom = document.getElementById('lastname').value;
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, nom, prenom })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          alert('Compte créé et connecté !');
+          document.getElementById('popupLogin').style.display = 'none';
+          location.reload();
+        } else {
+          alert('Erreur : ' + data.error);
+        }
+      } catch (err) {
+        alert('Erreur lors de l\'inscription');
+      }
+    });
   </script>
 </body>
 </html>
