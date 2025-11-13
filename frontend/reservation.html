@@ -324,6 +324,42 @@ dateInput.min = today;
 // Initialisation Stripe
 const stripe = Stripe('pk_test_51SNAODBC8OlVApnF0wMOYIFloX5RG2bEPWkQOkwnzU6ru1utj49Cce9soHOey1kX8ft3dZatuYZIbFfOfUJqrQWB000q5RIKLX');
 
+// Fonction de déconnexion
+function logout() {
+  localStorage.removeItem('token');
+  window.location.href = 'index.html';
+}
+
+// Vérifier si l'utilisateur est connecté et mettre à jour l'interface
+function updateAuthUI() {
+  const token = localStorage.getItem('token');
+  const loginBtn = document.getElementById('openModal');
+  const paymentForm = document.getElementById('payment-form');
+  const loginMessage = document.getElementById('login-message');
+  
+  if (token) {
+    // Cacher le message de connexion et afficher le formulaire
+    if (loginMessage) loginMessage.style.display = 'none';
+    if (paymentForm) paymentForm.style.display = '';
+    
+    // Remplacer le bouton de connexion par un bouton de déconnexion
+    if (loginBtn) {
+      loginBtn.outerHTML = `
+        <button class="login-btn" id="logoutBtn" style="background-color: #ff4d4d; color: white; padding: 0.5rem 1.2rem; font-weight: 700; border-radius: 25px; border: none; cursor: pointer;" onclick="logout()">
+          Déconnexion
+        </button>
+      `;
+    }
+  } else {
+    // Afficher le message de connexion et cacher le formulaire
+    if (loginMessage) loginMessage.style.display = 'block';
+    if (paymentForm) paymentForm.style.display = 'none';
+  }
+}
+
+// Initialiser l'interface utilisateur
+updateAuthUI();
+
 // Gestion formulaire connexion
 document.querySelector('#signInForm form').addEventListener('submit', async (e) => {
   e.preventDefault();

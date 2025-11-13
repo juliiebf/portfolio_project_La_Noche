@@ -228,12 +228,30 @@
       register(prenom, nom, email, password);
     });
 
-    // Vérifier si l'utilisateur est déjà connecté
-    const token = localStorage.getItem('token');
-    if (token) {
+    // Fonction de déconnexion
+    function logout() {
+      localStorage.removeItem('token');
+      window.location.reload();
+    }
+
+    // Vérifier si l'utilisateur est déjà connecté et mettre à jour l'interface
+    function updateAuthUI() {
+      const token = localStorage.getItem('token');
       const loginBtn = document.getElementById('openModal');
-      if (loginBtn) {
-        loginBtn.textContent = 'Se connecter';
+      const userMenu = document.getElementById('userMenu');
+      
+      if (token && loginBtn) {
+        // Remplacer le bouton de connexion par un bouton de déconnexion
+        if (loginBtn) {
+          loginBtn.outerHTML = `
+            <button class="login-btn" id="logoutBtn" style="background-color: #ff4d4d; color: white; padding: 0.5rem 1.2rem; font-weight: 700; border-radius: 25px; border: none; cursor: pointer;" onclick="logout()">
+              Déconnexion
+            </button>
+          `;
+        }
       }
     }
+
+    // Initialiser l'interface utilisateur
+    updateAuthUI();
   </script>
