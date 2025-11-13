@@ -6,69 +6,55 @@
   <title>Réservation - La Noche Karaoké Paris 9ème</title>
   <link rel="stylesheet" href="style.css" />
   <style>
+    /* Styles simplifiés */
     a.login-btn {
-      background-color: #27a2ef;
-      color: black;
-      padding: 0.5rem 1.2rem;
-      font-weight: 700;
-      border-radius: 25px;
-      border: none;
-      text-decoration: none;
-      cursor: pointer;
+      background-color: #27a2ef; color: black; padding: 0.5rem 1.2rem; font-weight: 700;
+      border-radius: 25px; border: none; text-decoration: none; cursor: pointer;
     }
     a.login-btn:hover {
-      background-color: #009bdd;
-      color: white;
+      background-color: #009bdd; color: white;
     }
-    main {
-      max-width: 600px;
-      margin: 3rem auto;
-      padding: 0 1rem;
-      text-align: center;
-    }
-    main h1 {
-      color: #eddca2;
-      font-size: 2.8rem;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      margin-bottom: 1rem;
-      text-shadow: none !important;
-    }
-    main p {
-      font-size: 1.25rem;
-      color: #ddd;
-      margin-bottom: 3rem;
-    }
-    form label {
-      display: block;
-      text-align: left;
-      margin-bottom: 0.3rem;
-      color: #ccc;
-      font-weight: 600;
-    }
+    main { max-width: 600px; margin: 3rem auto; padding: 0 1rem; text-align: center; }
+    main h1 { color: #eddca2; font-size: 2.8rem; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 1rem; }
+    main p { font-size: 1.25rem; color: #ddd; margin-bottom: 3rem; }
+    form label { display: block; text-align: left; margin-bottom: 0.3rem; color: #ccc; font-weight: 600; }
     input, select {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      border-radius: 6px;
-      border: none;
-      font-size: 1rem;
-      background-color: #222;
-      color: #eee;
+      width: 100%; padding: 0.5rem; margin-bottom: 1rem;
+      border-radius: 6px; border: none; font-size: 1rem; background-color: #222; color: #eee;
     }
     button[type="submit"] {
-      background-color: #27a2ef;
-      color: black;
-      font-weight: 700;
-      border: none;
-      border-radius: 25px;
-      padding: 1rem 2rem;
-      cursor: pointer;
-      box-shadow: 0 0 12px #22aaff00;
+      background-color: #27a2ef; color: black; font-weight: 700; border: none;
+      border-radius: 25px; padding: 1rem 2rem; cursor: pointer; font-size: 1.1rem;
       transition: background-color 0.3s ease;
-      font-size: 1.1rem;
     }
-
+    button[type="submit"]:hover {
+      background-color: #009bdd; color: white;
+    }
+    #message {
+      margin: 1rem auto; max-width: 600px;
+      padding: 0.8rem; border-radius: 8px; font-weight: 700; text-align: center;
+    }
+    .modal-bg {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal-popup {
+      background: #222; padding: 2rem; border-radius: 10px; width: 360px; color: #eee;
+    }
+    .modal-tabs {
+      display: flex; margin-bottom: 1rem;
+    }
+    .tab-btn {
+      flex: 1; cursor: pointer; background: #333; border: none; padding: 0.8rem;
+      color: #ccc; font-weight: 700;
+    }
+    .tab-btn.active {
+      background: #27a2ef; color: black;
+    }
+    .modal-btn-main {
+      width: 100%; background-color: #27a2ef; color: black; font-weight: 700;
+      border: none; padding: 1rem; border-radius: 25px; cursor: pointer; font-size: 1rem;
+    }
   </style>
   <script src="https://js.stripe.com/v3/"></script>
 </head>
@@ -92,6 +78,7 @@
     </div>
   </header>
   <main>
+    <div id="message"></div>
     <section class="hero-section">
       <div class="hero-content">
         <h1>Réservation</h1>
@@ -99,12 +86,13 @@
         <form id="payment-form">
           <label for="name">Nom complet</label>
           <input type="text" id="name" name="name" required />
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" required />
+          <label for="reservation-email">Email</label>
+          <input type="email" id="reservation-email" name="email" required />
           <label for="phone">Téléphone</label>
           <input type="tel" id="phone" name="phone" required />
           <label for="date">Date de réservation</label>
-          <input type="date" id="date" name="date" required />
+          <input type="date" id="date" name="date" min="" required>
+          <small id="date-error" style="color: red; display: none;">La date ne peut pas être antérieure à aujourd'hui</small>
           <label for="guests">Nombre de personnes</label>
           <select id="guests" name="guests">
             <option value="1">1 personne</option>
@@ -114,14 +102,6 @@
             <option value="5">5 personnes</option>
             <option value="6">6 personnes</option>
           </select>
-
-          <label>Choix du moyen de paiement</label>
-          <select id="payment-method" name="payment-method">
-            <option value="cb">Carte bancaire</option>
-            <option value="paypal">PayPal</option>
-            <option value="applepay">Apple Pay</option>
-          </select>
-
           <button type="submit">Valider la réservation</button>
         </form>
       </div>
@@ -132,73 +112,279 @@
     <p style="margin: 0 0 1rem 0;">42 Rue des Martyrs, 75009 Paris | 01 42 82 42 82</p>
     <a href="contact.html" style="color: #22aaff; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid transparent; padding: 6px 14px; border-radius: 15px; background: rgba(34, 170, 255, 0.1); transition: background 0.3s, border-color 0.3s;">Contactez-nous</a>
   </footer>
-  <!-- Pop-up connexion -->
+
+  <!-- Modale connexion / inscription -->
   <div class="modal-bg" id="popupLogin">
     <div class="modal-popup">
       <div class="modal-tabs">
         <button class="tab-btn active" id="tabSignIn" type="button">Déjà inscrit</button>
         <button class="tab-btn" id="tabSignUp" type="button">Nouveau compte</button>
       </div>
+
+      <!-- Form connexion -->
       <div id="signInForm">
         <h2 class="modal-title">Connexion</h2>
         <form>
-          <label for="username">Nom d'utilisateur</label>
-          <input type="text" id="username" name="username" autocomplete="username" required />
-          <label for="password">Mot de passe</label>
-          <input type="password" id="password" name="password" autocomplete="current-password" required />
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" name="email" autocomplete="email" required />
+          <label for="login-password">Mot de passe</label>
+          <input type="password" id="login-password" name="password" autocomplete="current-password" required />
           <button type="submit" class="modal-btn-main">SE CONNECTER</button>
         </form>
       </div>
+
+      <!-- Form inscription -->
       <div id="signUpForm" style="display:none;">
         <h2 class="modal-title">Nouveau compte</h2>
         <form>
-          <label for="newusername">Nom d'utilisateur</label>
-          <input type="text" id="newusername" name="newusername" autocomplete="username" required />
+          <label for="newprenom">Prénom</label>
+          <input type="text" id="newprenom" name="prenom" autocomplete="given-name" required />
+          <label for="newnom">Nom</label>
+          <input type="text" id="newnom" name="nom" autocomplete="family-name" required />
           <label for="newemail">Email</label>
-          <input type="email" id="newemail" name="newemail" autocomplete="email" required />
+          <input type="email" id="newemail" name="email" autocomplete="email" required />
           <label for="newpassword">Mot de passe</label>
-          <input type="password" id="newpassword" name="newpassword" autocomplete="new-password" required />
+          <input type="password" id="newpassword" name="password" autocomplete="new-password" required />
           <button type="submit" class="modal-btn-main">CRÉER LE COMPTE</button>
         </form>
       </div>
     </div>
   </div>
-  <script src="https://js.stripe.com/v3/"></script>
-  <script>
-    document.getElementById("openModal").onclick = function(e) {
-      e.preventDefault();
-      document.getElementById("popupLogin").style.display = "flex";
-    };
-    document.getElementById("popupLogin").onclick = function(e) {
-      if (e.target === this) this.style.display = "none";
-    };
-    const tabSignIn = document.getElementById("tabSignIn");
-    const tabSignUp = document.getElementById("tabSignUp");
-    const signInForm = document.getElementById("signInForm");
-    const signUpForm = document.getElementById("signUpForm");
-    tabSignIn.onclick = function() {
-      tabSignIn.classList.add("active");
-      tabSignUp.classList.remove("active");
-      signInForm.style.display = "";
-      signUpForm.style.display = "none";
-    };
-    tabSignUp.onclick = function() {
-      tabSignUp.classList.add("active");
-      tabSignIn.classList.remove("active");
-      signInForm.style.display = "none";
-      signUpForm.style.display = "";
-    };
 
-    // Cette partie est un exemple très simple de gestion du formulaire Stripe.
-    // Tu dois configurer ta clé Stripe côté serveur et gérer le paiement en backend pour un vrai site.
-    const stripe = Stripe('pk_test_12345');  // Remplace avec ta clé publique Stripe
-    const paymentForm = document.getElementById('payment-form');
-    paymentForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      // Ici tu pourrais récupérer le details et créer une session Stripe, etc.
-      alert("Paiement simulé : formulaire soumis !");
-      // Par sécurité, ici on ne fait rien de plus côté client.
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+// Gestion ouverture/fermeture modale
+document.getElementById("openModal").onclick = function(e) {
+  e.preventDefault();
+  document.getElementById("popupLogin").style.display = "flex";
+};
+document.getElementById("popupLogin").onclick = function(e) {
+  if (e.target === this) this.style.display = "none";
+};
+const tabSignIn = document.getElementById("tabSignIn");
+const tabSignUp = document.getElementById("tabSignUp");
+const signInForm = document.getElementById("signInForm");
+const signUpForm = document.getElementById("signUpForm");
+tabSignIn.onclick = function() {
+  tabSignIn.classList.add("active");
+  tabSignUp.classList.remove("active");
+  signInForm.style.display = "";
+  signUpForm.style.display = "none";
+};
+tabSignUp.onclick = function() {
+  tabSignUp.classList.add("active");
+  tabSignIn.classList.remove("active");
+  signInForm.style.display = "none";
+  signUpForm.style.display = "";
+};
+
+// Affichage messages
+function showMessage(message, isError = false) {
+  let el = document.getElementById('message');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'message';
+    el.style.margin = '1rem auto';
+    el.style.maxWidth = '600px';
+    el.style.padding = '0.8rem';
+    el.style.borderRadius = '8px';
+    el.style.fontWeight = '700';
+    el.style.textAlign = 'center';
+    el.style.color = isError ? '#b00020' : '#0a7a0a';
+    el.style.backgroundColor = isError ? '#f8d7da' : '#d0f0d0';
+    document.querySelector('main').prepend(el);
+  }
+  el.textContent = message;
+  el.style.color = isError ? '#b00020' : '#0a7a0a';
+  el.style.backgroundColor = isError ? '#f8d7da' : '#d0f0d0';
+}
+
+// Login API
+async function login(email, password) {
+  try {
+    const res = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
     });
-  </script>
+    if (!res.ok) {
+      const errorData = await res.json();
+      showMessage('Erreur connexion : ' + (errorData.error || res.statusText), true);
+      return null;
+    }
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    showMessage('Connexion réussie !');
+    return data.token;
+  } catch (err) {
+    showMessage('Erreur réseau lors de la connexion : ' + err.message, true);
+    return null;
+  }
+}
+
+// Signup API
+document.querySelector('#signUpForm form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const prenom = document.getElementById('newprenom').value.trim();
+  const nom = document.getElementById('newnom').value.trim();
+  const email = document.getElementById('newemail').value.trim();
+  const password = document.getElementById('newpassword').value;
+
+  if (!prenom || !nom || !email || !password) {
+    showMessage('Tous les champs sont requis pour l\'inscription.', true);
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prenom, nom, email, password })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      showMessage('Erreur inscription : ' + (errorData.error || response.statusText), true);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+      showMessage('Inscription réussie ! Vous êtes connecté.');
+      document.getElementById('popupLogin').style.display = 'none';
+    } else {
+      showMessage('Inscription réussie ! Merci de vous connecter.', false);
+      tabSignIn.click();
+    }
+  } catch (err) {
+    showMessage('Erreur réseau lors de l\'inscription : ' + err.message, true);
+  }
+});
+
+// Fonction pour démarrer Stripe Checkout avec redirection vers Stripe
+async function startStripeCheckout(amount, token) {
+  try {
+    const res = await fetch('http://localhost:3000/api/reservation/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ amount, currency: 'eur' })
+    });
+    if (!res.ok) {
+      const errorData = await res.json();
+      showMessage('Erreur création session paiement : ' + (errorData.error || res.statusText), true);
+      return;
+    }
+    const { sessionId } = await res.json();
+    const stripe = Stripe('pk_test_51SNAODBC8OlVApnF0wMOYIFloX5RG2bEPWkQOkwnzU6ru1utj49Cce9soHOey1kX8ft3dZatuYZIbFfOfUJqrQWB000q5RIKLX'); // Ta clé publique Stripe
+    const { error } = await stripe.redirectToCheckout({ sessionId });
+    if (error) {
+      showMessage('Erreur redirection Stripe : ' + error.message, true);
+    }
+  } catch (err) {
+    showMessage('Erreur réseau lors de la création de session : ' + err.message, true);
+  }
+}
+
+// Création réservation
+async function createReservation(data, token) {
+  try {
+    const response = await fetch('http://localhost:3000/api/reservation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      showMessage('Erreur réservation : ' + (errorData.error || response.statusText), true);
+      return null;
+    }
+    const result = await response.json();
+    showMessage('Réservation créée : ' + result.message);
+    return result;
+  } catch (err) {
+    showMessage('Erreur réseau réservation : ' + err.message, true);
+    return null;
+  }
+}
+
+// Initialisation Stripe publique
+// Initialisation de la date minimale du sélecteur de date
+const dateInput = document.getElementById('date');
+const today = new Date().toISOString().split('T')[0];
+dateInput.min = today;
+
+// Initialisation Stripe
+const stripe = Stripe('pk_test_51SNAODBC8OlVApnF0wMOYIFloX5RG2bEPWkQOkwnzU6ru1utj49Cce9soHOey1kX8ft3dZatuYZIbFfOfUJqrQWB000q5RIKLX');
+
+// Gestion formulaire connexion
+document.querySelector('#signInForm form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+
+  if (!email) {
+    showMessage('Le champ email est obligatoire.', true);
+    return;
+  }
+
+  if (!password) {
+    showMessage('Le champ mot de passe est obligatoire.', true);
+    return;
+  }
+
+  const token = await login(email, password);
+  if (token) {
+    document.getElementById('popupLogin').style.display = 'none';
+  }
+});
+
+// Gestion formulaire réservation
+document.getElementById('payment-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    showMessage('Vous devez être connecté pour réserver.', true);
+    return;
+  }
+
+  const dateInput = document.getElementById('date');
+  const date = dateInput.value;
+  const selectedDate = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Réinitialiser l'heure à minuit pour la comparaison
+  
+  if (selectedDate < today) {
+    showMessage('La date de réservation ne peut pas être antérieure à aujourd\'hui.', true);
+    return;
+  }
+
+  const guests = parseInt(document.getElementById('guests').value, 10);
+  const pricePerPerson = 1700; // 17 € en centimes
+  const amount = guests * pricePerPerson;
+  
+  if (!date || !guests) {
+    showMessage('Merci de remplir tous les champs.', true);
+    return;
+  }
+
+  showMessage('Redirection vers Stripe pour paiement sécurisé…');
+
+  await startStripeCheckout(amount, token);
+
+  // Ne pas appeler createReservation ici.
+  // La réservation sera confirmée côté backend après paiement (via webhook ou page succès).
+});
+
+</script>
 </body>
 </html>
