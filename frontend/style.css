@@ -577,3 +577,20 @@ footer {
       transition: background-color 0.3s ease;
       font-size: 1.1rem;
     }
+
+ #logoutBtn {
+  background-color: #d43f3a; /* rouge */
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-block;
+  transition: background-color 0.3s ease;
+}
+
+#logoutBtn:hover {
+  background-color: #a9302d; /* rouge foncé au survol */
+}
