@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Votes - La Noche Karaoké Paris 9ème</title>
+  <title>Votes - La Noche Karaoké Paris 9ème</title> <!-- Titre modifié -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -20,14 +20,13 @@
           <li><a href="boissons.html">Boissons</a></li>
           <li><a href="chansons.html">Chansons</a></li>
           <li><a href="galerie.html">Galerie</a></li>
-          <li><a href="votes.html" class="active">Votes</a></li> 
+          <li><a href="votes.html"class="active">Votes</a></li> 
           <li><a href="contact.html">Contact</a></li>
         </ul>
         <a href="#" id="openModal" class="login-btn">Se connecter</a>
       </nav>
     </div>
   </header>
-  
   <main> 
     <section class="hero-section">
       <div class="hero-content">
@@ -46,9 +45,9 @@
             <tr>
               <th>#</th>
               <th>Vidéo</th>
-              <th>Nom utilisateur</th>
-              <th>Likes</th>
-              <th>Likez</th>
+              <th>Nom fichier</th>
+              <th>Votes</th>
+              <th>Votez</th>
             </tr>
           </thead>
           <tbody id="videoList">
@@ -56,149 +55,68 @@
           </tbody>
         </table>
 
-        <!-- Script JS d'upload et de likes -->
+        <!-- Script JS d’upload et de votes -->
         <script>
-          const API_URL = 'http://localhost:3000';
-          let token = localStorage.getItem('token');
+          // Liste des vidéos uploadées (champ id, nom, url, votes)
+          let videos = [];
           const uploadForm = document.getElementById('uploadForm');
           const videoFileInput = document.getElementById('videoFile');
           const videoList = document.getElementById('videoList');
-
-          // Charger les vidéos au démarrage
-          loadVideos();
-
-          // Upload d'une vidéo
-          uploadForm.addEventListener('submit', async (e) => {
+        
+          // Ajout d’une vidéo à la soumission du formulaire
+          uploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            
-            if (!token) {
-              alert("Vous devez être connecté pour uploader une vidéo !");
-              return;
-            }
-
             const file = videoFileInput.files[0];
-            if (!file) return alert("Veuillez sélectionner un fichier vidéo.");
-
-            const formData = new FormData();
-            formData.append('video', file);
-
-            try {
-              const response = await fetch(`${API_URL}/api/ranking/upload`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                },
-                body: formData
-              });
-
-              const data = await response.json();
-              
-              if (response.ok) {
-                alert('Vidéo uploadée avec succès !');
-                uploadForm.reset();
-                loadVideos();
-              } else {
-                alert('Erreur : ' + data.error);
-              }
-            } catch (err) {
-              console.error(err);
-              alert('Erreur lors de l\'upload');
-            }
+            if (!file) return alert("Veuillez sélectionner un fichier vidéo."); // Alerte si rien choisi
+            const url = URL.createObjectURL(file);
+            videos.push({id: videos.length + 1, name: file.name, url: url, votes: 0}); // Ajout vidéo dans le tableau
+            renderVideos(); // Actualise le tableau
+            uploadForm.reset();
           });
-
-          // Charger toutes les vidéos depuis le backend
-          async function loadVideos() {
-            try {
-              const response = await fetch(`${API_URL}/api/ranking`);
-              const videos = await response.json();
-              
-              if (response.ok) {
-                renderVideos(videos);
-              } else {
-                console.error('Erreur chargement vidéos:', videos);
-              }
-            } catch (err) {
-              console.error('Erreur:', err);
-            }
-          }
-
-          // Afficher les vidéos dans le tableau
-          function renderVideos(videos) {
+        
+          // Fonction d’affichage du tableau vidéos
+          function renderVideos() {
             videoList.innerHTML = '';
-            
             videos.forEach((video, index) => {
               const tr = document.createElement('tr');
-              
-              // Numéro
+              // Numéro de ligne
               const tdIndex = document.createElement('td');
               tdIndex.textContent = index + 1;
               tr.appendChild(tdIndex);
-              
-              // Vidéo
+              // Affichage miniature vidéo
               const tdVideo = document.createElement('td');
               const videoTag = document.createElement('video');
-              videoTag.src = `${API_URL}/uploads/${video.filename}`;
+              videoTag.src = video.url;
               videoTag.width = 200;
               videoTag.controls = true;
               tdVideo.appendChild(videoTag);
               tr.appendChild(tdVideo);
-              
-              // Nom utilisateur
+              // Nom du fichier
               const tdName = document.createElement('td');
-              tdName.textContent = video.username || `${video.prenom} ${video.nom}`;
+              tdName.textContent = video.name;
               tr.appendChild(tdName);
-              
-              // Likes
-              const tdLikes = document.createElement('td');
-              tdLikes.textContent = video.likes;
-              tr.appendChild(tdLikes);
-              
-              // Bouton liker
-              const tdLikeBtn = document.createElement('td');
-              const likeBtn = document.createElement('button');
-              likeBtn.textContent = 'Liker';
-              likeBtn.onclick = () => likeVideo(video.id);
-              tdLikeBtn.appendChild(likeBtn);
-              tr.appendChild(tdLikeBtn);
+              // Compteur de votes
+              const tdVotes = document.createElement('td');
+              tdVotes.textContent = video.votes;
+              tr.appendChild(tdVotes);
+              // Bouton de vote
+              const tdVoteBtn = document.createElement('td');
+              const voteBtn = document.createElement('button');
+              voteBtn.textContent = 'Voter';
+              voteBtn.onclick = () => {
+                videos[index].votes++;
+                renderVideos();
+              };
+              tdVoteBtn.appendChild(voteBtn);
+              tr.appendChild(tdVoteBtn);
 
               videoList.appendChild(tr);
             });
-          }
-
-          // Liker une vidéo
-          async function likeVideo(videoId) {
-            if (!token) {
-              alert("Vous devez être connecté pour liker !");
-              return;
-            }
-
-            try {
-              const response = await fetch(`${API_URL}/api/ranking/${videoId}/like`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                }
-              });
-
-              const data = await response.json();
-              
-              if (response.ok) {
-                alert('Like enregistré !');
-                loadVideos();
-              } else {
-                alert('Erreur : ' + data.error);
-              }
-            } catch (err) {
-              console.error(err);
-              alert('Erreur lors du like');
-            }
           }
         </script>
       </div>
     </section>
   </main>
-  
   <footer style="background-color: #10060611; color: #777777; padding: 1rem 2rem; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
     <p style="margin: 0 0 0.5rem 0;">© 2025 La Noche Karaoké Paris. Tous droits réservés</p>
     <p style="margin: 0 0 1rem 0;">42 Rue des Martyrs, 75009 Paris | 01 42 82 42 82</p>
@@ -214,45 +132,41 @@
       </div>
       <div id="signInForm">
         <h2 class="modal-title">Connexion</h2>
-      <form> 
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" autocomplete="email" required />
-        <label for="password">Mot de passe</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required />
-        <button type="submit" class="modal-btn-main">SE CONNECTER</button>
-      </form>
-
+        <form>
+          <label for="username">Nom d'utilisateur</label>
+          <input type="text" id="username" name="username" autocomplete="username" required />
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+          <button type="submit" class="modal-btn-main">SE CONNECTER</button>
+        </form>
       </div>
       <div id="signUpForm" style="display:none;">
         <h2 class="modal-title">Nouveau compte</h2>
         <form>
-          <label for="firstname">Prénom</label>
-          <input type="text" id="firstname" name="firstname" autocomplete="given-name" required />
-
-          <label for="lastname">Nom</label>
-          <input type="text" id="lastname" name="lastname" autocomplete="family-name" required />
-
+          <label for="newusername">Nom d'utilisateur</label>
+          <input type="text" id="newusername" name="newusername" autocomplete="username" required />
           <label for="newemail">Email</label>
           <input type="email" id="newemail" name="newemail" autocomplete="email" required />
-
           <label for="newpassword">Mot de passe</label>
           <input type="password" id="newpassword" name="newpassword" autocomplete="new-password" required />
-
           <button type="submit" class="modal-btn-main">CRÉER LE COMPTE</button>
-
         </form>
       </div>
     </div>
   </div>
-  <script src="https://js.stripe.com/v3/"></script>
+
   <script>
-    document.getElementById("openModal").onclick = function(e) {
+    // Gestion ouverture/fermeture du pop-up login
+    const openModalBtn = document.getElementById("openModal");
+    const popupLogin = document.getElementById("popupLogin");
+    openModalBtn.onclick = function(e) {
       e.preventDefault();
-      document.getElementById("popupLogin").style.display = "flex";
+      popupLogin.style.display = "flex";
     };
-    document.getElementById("popupLogin").onclick = function(e) {
+    popupLogin.onclick = function(e) {
       if (e.target === this) this.style.display = "none";
     };
+    // Gestion des onglets connexion / inscription
     const tabSignIn = document.getElementById("tabSignIn");
     const tabSignUp = document.getElementById("tabSignUp");
     const signInForm = document.getElementById("signInForm");
@@ -269,17 +183,6 @@
       signInForm.style.display = "none";
       signUpForm.style.display = "";
     };
-
-    // Cette partie est un exemple très simple de gestion du formulaire Stripe.
-    // Tu dois configurer ta clé Stripe côté serveur et gérer le paiement en backend pour un vrai site.
-    const stripe = Stripe('pk_test_12345');  // Remplace avec ta clé publique Stripe
-    const paymentForm = document.getElementById('payment-form');
-    paymentForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      // Ici tu pourrais récupérer le details et créer une session Stripe, etc.
-      alert("Paiement simulé : formulaire soumis !");
-      // Par sécurité, ici on ne fait rien de plus côté client.
-    });
   </script>
 </body>
 </html>
