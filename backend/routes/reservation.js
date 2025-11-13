@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../db');
 const { authenticateToken } = require('../middleware/authenticateToken');
 const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // POST /paiement-intent : créer un paiement Stripe
 router.post('/paiement-intent', authenticateToken, async (req, res) => {
@@ -79,6 +79,31 @@ router.post('/', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error(`[POST /reservations] Erreur serveur pour user_id=${req.user.id}:`, error);
     res.status(500).json({ error: 'Erreur serveur lors de la création de la réservation' });
+  }
+});
+// POST /create-checkout-session : créer une session de paiement Stripe
+router.post('/create-checkout-session', async (req, res) => {
+  const { amount } = req.body; // en centimes
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Réservation La Noche',
+          },
+          unit_amount: amount,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: 'http://localhost:5500/frontend/index.html',
+      cancel_url: 'http://localhost:5500/frontend/reservation.html',
+    });
+    res.json({ sessionId: session.id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
