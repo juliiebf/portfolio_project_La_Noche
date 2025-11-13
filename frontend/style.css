@@ -464,6 +464,8 @@ h2 {
 .modal-tabs .tab-btn.active {
   color: var(--btn-blue);
   border-bottom: 3px solid var(--btn-blue);
+  background-color: rgba(34, 170, 255, 0.25);
+  box-shadow: 0 0 8px var(--btn-blue);
 }
 
 /* Titres des formulaires dans modal */
