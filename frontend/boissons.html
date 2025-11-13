@@ -24,7 +24,7 @@
           <li><a href="Votes.html">Evenements</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
-        <a href="#" id="openModal" class="login-btn">Se connecter</a>
+        <a href="#" id="openModal" class="login-btn" style="background-color: #27a2ef; color: black; padding: 0.5rem 1.2rem; font-weight: 700; border-radius: 25px; border: none; text-decoration: none; cursor: pointer;">Se connecter</a>
       </nav>
     </div>
   </header>
@@ -213,31 +213,185 @@
   </div>
 
   <script>
-    const openModalBtn = document.getElementById("openModal");
-    const popupLogin = document.getElementById("popupLogin");
-    openModalBtn.onclick = function(e) {
-      e.preventDefault();
-      popupLogin.style.display = "flex";
-    };
-    popupLogin.onclick = function(e) {
-      if (e.target === this) this.style.display = "none";
-    };
-    const tabSignIn = document.getElementById("tabSignIn");
-    const tabSignUp = document.getElementById("tabSignUp");
-    const signInForm = document.getElementById("signInForm");
-    const signUpForm = document.getElementById("signUpForm");
-    tabSignIn.onclick = function() {
-      tabSignIn.classList.add("active");
-      tabSignUp.classList.remove("active");
-      signInForm.style.display = "";
-      signUpForm.style.display = "none";
-    };
-    tabSignUp.onclick = function() {
-      tabSignUp.classList.add("active");
-      tabSignIn.classList.remove("active");
-      signInForm.style.display = "none";
-      signUpForm.style.display = "";
-    };
+    // Fonction pour afficher les messages
+    function showMessage(message, type = 'success') {
+      const messageEl = document.createElement('div');
+      messageEl.style.position = 'fixed';
+      messageEl.style.top = '20px';
+      messageEl.style.left = '50%';
+      messageEl.style.transform = 'translateX(-50%)';
+      messageEl.style.padding = '15px 25px';
+      messageEl.style.borderRadius = '5px';
+      messageEl.style.color = 'white';
+      messageEl.style.zIndex = '1000';
+      messageEl.style.fontWeight = 'bold';
+      messageEl.style.transition = 'opacity 0.5s';
+      
+      if (type === 'success') {
+        messageEl.style.backgroundColor = '#4CAF50';
+      } else {
+        messageEl.style.backgroundColor = '#f44336';
+      }
+      
+      messageEl.textContent = message;
+      document.body.appendChild(messageEl);
+      
+      setTimeout(() => {
+        messageEl.style.opacity = '0';
+        setTimeout(() => {
+          document.body.removeChild(messageEl);
+        }, 500);
+      }, 3000);
+    }
+
+    // Fonction de connexion
+    async function login(event) {
+      event.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const response = await fetch('http://localhost:3000/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          updateAuthUI();
+          document.getElementById('popupLogin').style.display = 'none';
+          showMessage('Connexion réussie !');
+        } else {
+          showMessage(data.error || 'Erreur de connexion', 'error');
+        }
+      } catch (error) {
+        showMessage('Erreur de connexion au serveur', 'error');
+      }
+    }
+
+    // Fonction d'inscription
+    async function register(event) {
+      event.preventDefault();
+      const username = document.getElementById('newusername').value;
+      const email = document.getElementById('newemail').value;
+      const password = document.getElementById('newpassword').value;
+      
+      try {
+        const response = await fetch('http://localhost:3000/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, email, password }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showMessage('Inscription réussie ! Vous pouvez maintenant vous connecter.');
+          // Basculer vers l'onglet de connexion
+          document.getElementById('tabSignIn').click();
+        } else {
+          showMessage(data.error || "Erreur lors de l'inscription", 'error');
+        }
+      } catch (error) {
+        showMessage("Erreur lors de la communication avec le serveur", 'error');
+      }
+    }
+
+    // Fonction de déconnexion
+    function logout() {
+      localStorage.removeItem('token');
+      updateAuthUI();
+      window.location.reload();
+    }
+
+    // Mise à jour de l'interface utilisateur en fonction de l'état de connexion
+    function updateAuthUI() {
+      const token = localStorage.getItem('token');
+      const loginBtn = document.getElementById('openModal');
+      
+      if (token && loginBtn) {
+        // Remplacer le bouton de connexion par un bouton de déconnexion
+        loginBtn.outerHTML = `
+          <a href="#" id="logoutBtn" class="login-btn" style="background-color: #ff4d4d; color: white; padding: 0.5rem 1.2rem; font-weight: 700; border-radius: 25px; border: none; text-decoration: none; cursor: pointer;" onclick="logout(); return false;">
+            Déconnexion
+          </a>
+        `;
+      } else if (loginBtn) {
+        // Remettre le bouton de connexion si l'utilisateur n'est pas connecté
+        loginBtn.outerHTML = '<a href="#" id="openModal" class="login-btn" style="background-color: #27a2ef; color: black; padding: 0.5rem 1.2rem; font-weight: 700; border-radius: 25px; border: none; text-decoration: none; cursor: pointer;">Se connecter</a>';
+        // Réattacher les gestionnaires d'événements
+        setupEventListeners();
+      }
+    }
+
+    // Configuration des écouteurs d'événements
+    function setupEventListeners() {
+      // Gestion de la modale de connexion
+      const openModalBtn = document.getElementById("openModal");
+      const popupLogin = document.getElementById("popupLogin");
+      
+      if (openModalBtn) {
+        openModalBtn.onclick = function(e) {
+          e.preventDefault();
+          popupLogin.style.display = "flex";
+        };
+      }
+      
+      if (popupLogin) {
+        popupLogin.onclick = function(e) {
+          if (e.target === this) this.style.display = "none";
+        };
+      }
+
+      // Gestion des onglets connexion/inscription
+      const tabSignIn = document.getElementById("tabSignIn");
+      const tabSignUp = document.getElementById("tabSignUp");
+      const signInForm = document.getElementById("signInForm");
+      const signUpForm = document.getElementById("signUpForm");
+      
+      if (tabSignIn) {
+        tabSignIn.onclick = function() {
+          tabSignIn.classList.add("active");
+          tabSignUp.classList.remove("active");
+          signInForm.style.display = "";
+          signUpForm.style.display = "none";
+        };
+      }
+      
+      if (tabSignUp) {
+        tabSignUp.onclick = function() {
+          tabSignUp.classList.add("active");
+          tabSignIn.classList.remove("active");
+          signInForm.style.display = "none";
+          signUpForm.style.display = "";
+        };
+      }
+
+      // Gestion des formulaires
+      const signInFormEl = document.querySelector('#signInForm form');
+      const signUpFormEl = document.querySelector('#signUpForm form');
+      
+      if (signInFormEl) {
+        signInFormEl.onsubmit = login;
+      }
+      
+      if (signUpFormEl) {
+        signUpFormEl.onsubmit = register;
+      }
+    }
+
+    // Initialisation au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+      updateAuthUI();
+      setupEventListeners();
+    });
   </script>
 </body>
 </html>
