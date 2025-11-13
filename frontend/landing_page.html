@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>À propos - La Noche Karaoké Paris</title>
+  <meta name="description" content="Découvrez l’histoire et l’esprit de La Noche, le karaoké interactif et convivial de Paris 9e." />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    main {
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #ddd;
+      line-height: 1.8;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      color: #eddca2;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #aaa;
+      margin-bottom: 4rem;
+      font-size: 1.2rem;
+    }
+
+    section {
+      margin-bottom: 4rem;
+    }
+
+    h2 {
+      color: #22aaff;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    p, li { color: #ccc; font-size: 1.05rem; }
+    ul { margin-top: 1rem; padding-left: 1.5rem; }
+
+    .highlight {
+      color: #eddca2;
+      font-weight: 600;
+    }
+
+    .cta {
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    .cta a {
+      display: inline-block;
+      background: linear-gradient(135deg, #22aaff, #1a8cd8);
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 0.9rem 2rem;
+      border-radius: 30px;
+      transition: 0.3s;
+      box-shadow: 0 8px 20px rgba(34,170,255,0.4);
+    }
+
+    .cta a:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(34,170,255,0.6);
+    }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top-header">
+      <a href="index.html">
+        <img src="images/Design sans titre.png" alt="La Noche Karaoke" class="logo-main" />
+      </a>
+      <nav class="main-nav">
+        <ul class="nav-links">
+          <li><a href="index.html">Accueil</a></li>
+          <li><a href="reservation.html">Réservation</a></li>
+          <li><a href="boissons.html">Boissons</a></li>
+          <li><a href="chansons.html">Chansons</a></li>
+          <li><a href="galerie.html">Galerie</a></li>
+          <li><a href="evenements.html">Événements</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="landing_page.html" class="active">À propos</a></li>
+        </ul>
+        <a href="#" id="openModal" class="login-btn">Se connecter</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h1>À propos de La Noche</h1>
+    <p class="subtitle">Le karaoké interactif et convivial de Pigalle</p>
+
+    <section>
+      <h2>Notre histoire</h2>
+      <p>
+        <span class="highlight">La Noche</span> est née d’une idée simple : redonner vie au karaoké parisien.  
+        Niché dans les caves voûtées du 9ᵉ arrondissement, l’endroit réunit passion, musique et bonne humeur.  
+        Ici, chaque chanson devient un souvenir à partager.
+      </p>
+    </section>
+
+    <section>
+      <h2>Le constat</h2>
+      <p>On a tous déjà vécu une soirée karaoké inoubliable… mais souvent :</p>
+      <ul>
+        <li>Les prestations disparaissent après la soirée</li>
+        <li>Impossible de les partager avec les absents</li>
+        <li>Aucune façon d’interagir ou de voter pour ses artistes préférés</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Notre vision</h2>
+      <p>
+        Avec La Noche, nous avons voulu moderniser l’expérience :
+      </p>
+      <ul>
+        <li>Enregistrer et revivre vos meilleures performances</li>
+        <li>Partager vos moments avec vos amis</li>
+        <li>Voter et découvrir de nouveaux talents</li>
+        <li>Réserver en ligne, facilement</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Une ambiance unique</h2>
+      <p>
+        Plus qu’un karaoké, <span class="highlight">La Noche</span> est un lieu de rencontre et d’expression.  
+        Un bar, une scène, une communauté — et toujours la même promesse :  
+        faire de chaque soirée un moment inoubliable.
+      </p>
+    </section>
+
+    <div class="cta">
+      <a href="reservation.html">Réserver ma soirée</a>
+    </div>
+  </main>
+
+  <footer style="background-color: #10060611; color: #777777; padding: 1rem 2rem; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <p style="margin: 0 0 0.5rem 0;">© 2025 La Noche Karaoké Paris. Tous droits réservés</p>
+    <p style="margin: 0 0 1rem 0;">42 Rue des Martyrs, 75009 Paris | 01 42 82 42 82</p>
+    <a href="contact.html" style="color: #22aaff; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid transparent; padding: 6px 14px; border-radius: 15px; background: rgba(34, 170, 255, 0.1); transition: background 0.3s, border-color 0.3s;">Contactez-nous</a>
+  </footer>
+</body>
+</html>
