@@ -214,43 +214,45 @@
       </div>
       <div id="signInForm">
         <h2 class="modal-title">Connexion</h2>
-        <form>
-          <label for="username">Email</label>
-          <input type="email" id="username" name="username" autocomplete="username" required />
-          <label for="password">Mot de passe</label>
-          <input type="password" id="password" name="password" autocomplete="current-password" required />
-          <button type="submit" class="modal-btn-main">SE CONNECTER</button>
-        </form>
+      <form> 
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" autocomplete="email" required />
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" required />
+        <button type="submit" class="modal-btn-main">SE CONNECTER</button>
+      </form>
+
       </div>
       <div id="signUpForm" style="display:none;">
         <h2 class="modal-title">Nouveau compte</h2>
         <form>
-          <label for="newusername">Nom complet (Prénom Nom)</label>
-          <input type="text" id="newusername" name="newusername" autocomplete="name" required />
+          <label for="firstname">Prénom</label>
+          <input type="text" id="firstname" name="firstname" autocomplete="given-name" required />
+
+          <label for="lastname">Nom</label>
+          <input type="text" id="lastname" name="lastname" autocomplete="family-name" required />
+
           <label for="newemail">Email</label>
           <input type="email" id="newemail" name="newemail" autocomplete="email" required />
+
           <label for="newpassword">Mot de passe</label>
           <input type="password" id="newpassword" name="newpassword" autocomplete="new-password" required />
+
           <button type="submit" class="modal-btn-main">CRÉER LE COMPTE</button>
+
         </form>
       </div>
     </div>
   </div>
-
+  <script src="https://js.stripe.com/v3/"></script>
   <script>
- 
-    // Gestion ouverture/fermeture du pop-up login
-    const openModalBtn = document.getElementById("openModal");
-    const popupLogin = document.getElementById("popupLogin");
-    openModalBtn.onclick = function(e) {
+    document.getElementById("openModal").onclick = function(e) {
       e.preventDefault();
-      popupLogin.style.display = "flex";
+      document.getElementById("popupLogin").style.display = "flex";
     };
-    popupLogin.onclick = function(e) {
+    document.getElementById("popupLogin").onclick = function(e) {
       if (e.target === this) this.style.display = "none";
     };
-    
-    // Gestion des onglets connexion / inscription
     const tabSignIn = document.getElementById("tabSignIn");
     const tabSignUp = document.getElementById("tabSignUp");
     const signInForm = document.getElementById("signInForm");
@@ -268,62 +270,15 @@
       signUpForm.style.display = "";
     };
 
-    // Gestion du formulaire de connexion
-    document.querySelector('#signInForm form').addEventListener('submit', async (e) => {
+    // Cette partie est un exemple très simple de gestion du formulaire Stripe.
+    // Tu dois configurer ta clé Stripe côté serveur et gérer le paiement en backend pour un vrai site.
+    const stripe = Stripe('pk_test_12345');  // Remplace avec ta clé publique Stripe
+    const paymentForm = document.getElementById('payment-form');
+    paymentForm.addEventListener('submit', async function(e) {
       e.preventDefault();
-      const email = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      try {
-        const response = await fetch(`${API_URL}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-
-        const data = await response.json();
-        
-        if (response.ok) {
-          localStorage.setItem('token', data.token);
-          alert('Connexion réussie !');
-          document.getElementById('popupLogin').style.display = 'none';
-          location.reload();
-        } else {
-          alert('Erreur : ' + data.error);
-        }
-      } catch (err) {
-        alert('Erreur de connexion');
-      }
-    });
-
-    // Gestion du formulaire d'inscription
-    document.querySelector('#signUpForm form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('newemail').value;
-      const password = document.getElementById('newpassword').value;
-      const [prenom, ...nomParts] = document.getElementById('newusername').value.split(' ');
-      const nom = nomParts.join(' ') || prenom;
-
-      try {
-        const response = await fetch(`${API_URL}/api/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, nom, prenom })
-        });
-
-        const data = await response.json();
-        
-        if (response.ok) {
-          localStorage.setItem('token', data.token);
-          alert('Compte créé et connecté !');
-          document.getElementById('popupLogin').style.display = 'none';
-          location.reload();
-        } else {
-          alert('Erreur : ' + data.error);
-        }
-      } catch (err) {
-        alert('Erreur lors de l\'inscription');
-      }
+      // Ici tu pourrais récupérer le details et créer une session Stripe, etc.
+      alert("Paiement simulé : formulaire soumis !");
+      // Par sécurité, ici on ne fait rien de plus côté client.
     });
   </script>
 </body>
